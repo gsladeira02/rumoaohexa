@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RUMO AO HEXA · Simulador de Copa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--pitch:#0a6b3f;--pitch-dark:#064a2b;--gold:#ffd24a;--gold-deep:#e8a200;--ink:#08130d;--chalk:#f4f7f2;--line:rgba(255,255,255,.25);--accent:#ff4d3d}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:'Archivo',system-ui,sans-serif;background:var(--ink);color:var(--chalk);overflow-x:hidden;position:relative}
+body::before{content:"";position:fixed;inset:0;z-index:0;background:radial-gradient(120% 80% at 50% -10%, #0e8a52 0%, var(--pitch-dark) 45%, var(--ink) 90%)}
+body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.07;background-image:repeating-linear-gradient(90deg,#fff 0 2px,transparent 2px 64px)}
+#app{position:relative;z-index:1;max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:18px 16px 40px}
+.kicker{font-weight:900;letter-spacing:.28em;font-size:11px;color:var(--gold);text-transform:uppercase}
+/* cabeçalho padrão de tela */
+.scr-title{font-family:'Anton';font-size:30px;line-height:.95;letter-spacing:.5px;text-transform:uppercase;margin-top:2px}
+.scr-title .em{color:var(--gold)}
+/* rótulo de seção (Mentalidade, Dificuldade...) padronizado */
+.label{font-size:13px;font-weight:800;opacity:.9;margin-top:18px;margin-bottom:0}
+.label:first-of-type{margin-top:16px}
+h1{font-family:'Anton';font-size:clamp(36px,12vw,60px);line-height:.86;letter-spacing:.5px;text-transform:uppercase}
+h1 .em{color:var(--gold);display:block}
+.sub{font-size:14px;opacity:.75;margin-top:14px;line-height:1.45}
+.screen{display:none;animation:fade .35s ease both}
+.screen.active{display:flex;flex-direction:column;flex:1}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.hero{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:20px 0}
+.ball{font-size:54px;filter:drop-shadow(0 8px 18px rgba(0,0,0,.5));animation:spin 9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn{font-family:'Anton';font-size:20px;letter-spacing:1px;text-transform:uppercase;border:none;border-radius:14px;padding:0 18px;height:58px;width:100%;cursor:pointer;background:linear-gradient(180deg,var(--gold),var(--gold-deep));color:#1a1206;box-shadow:0 6px 0 #9c6e00,0 14px 26px rgba(0,0,0,.4);transition:transform .08s,box-shadow .08s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 #9c6e00,0 6px 14px rgba(0,0,0,.4)}
+.btn.ghost{background:transparent;color:var(--chalk);border:2px solid var(--line);box-shadow:none;font-size:15px;height:50px}
+.btn:disabled{filter:grayscale(.6) brightness(.7);box-shadow:none;cursor:default}
+.btn .ic{font-size:.9em;line-height:1}
+.options{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.opt{border:2px solid var(--line);border-radius:14px;padding:14px;background:rgba(0,0,0,.25);cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:3px}
+.opt:active{transform:scale(.98)}
+.opt.sel{border-color:var(--gold);background:rgba(255,210,74,.12)}
+.opt .t{font-family:'Anton';font-size:18px;letter-spacing:.5px}
+.opt .d{font-size:11.5px;opacity:.7;line-height:1.35}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;min-height:22px}
+.progress{font-family:'Anton';font-size:13px;letter-spacing:1px;color:var(--gold);flex-shrink:0;white-space:nowrap}
+.formation-tag{font-size:12px;opacity:.7;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%;text-align:right}
+.ovr-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:4px 0 2px}
+.ovr-cell{background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:10px;padding:7px 4px;text-align:center}
+.ovr-cell .v{font-family:'Anton';font-size:22px;line-height:1;color:var(--gold)}
+.ovr-cell.geral .v{color:#fff}
+.ovr-cell .l{font-size:8.5px;font-weight:900;letter-spacing:.8px;opacity:.65;margin-top:3px}
+.slot-row{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.minislot{min-width:24px;height:24px;padding:0 4px;border-radius:12px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;opacity:.45}
+.minislot.done{background:var(--gold);color:#1a1206;border-color:var(--gold);opacity:1}
+.minislot.cur{border-color:var(--gold);opacity:1;animation:pulse 1.2s infinite}
+.minislot.sub{border-style:dashed}
+.slot-div{flex-basis:100%;height:0;margin:2px 0}
+.slot-row .minislot.sub{border-color:rgba(255,210,74,.6)}
+.slot-lbl{flex-basis:100%;text-align:center;font-size:8px;font-weight:900;letter-spacing:1px;color:var(--gold);opacity:.7;margin:2px 0 0}
+@keyframes pulse{50%{box-shadow:0 0 0 4px rgba(255,210,74,.25)}}
+.pick-head{text-align:center;margin:4px 0 10px}
+.pick-head .pos{font-family:'Anton';font-size:24px;color:var(--gold);letter-spacing:1px}
+.pick-head .sm{font-size:12px;opacity:.7}
+.draft-body{display:flex;gap:12px;align-items:flex-start}
+.draft-cards{flex:1;display:flex;flex-direction:column;gap:9px}
+.pcard{border-radius:13px;padding:12px;cursor:pointer;position:relative;overflow:hidden;background:linear-gradient(160deg,#15301f,#0b1a11);border:2px solid rgba(255,255,255,.1);transition:transform .1s;display:flex;align-items:center;gap:12px;min-height:64px}
+.pcard:active{transform:scale(.98)}
+.pcard .face{font-size:22px;width:34px;text-align:center;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.pcard .info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.pcard .nm{font-family:'Anton';font-size:16px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .meta{font-size:11px;opacity:.65;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .ovr{font-family:'Anton';font-size:22px;color:var(--gold);min-width:38px;text-align:center;flex-shrink:0;font-variant-numeric:tabular-nums}
+.pcard.hidden-ovr .ovr{visibility:hidden}
+.reroll-btn{margin-top:4px;width:100%;border:2px dashed rgba(255,210,74,.55);background:rgba(255,210,74,.08);color:var(--gold);font-family:'Anton';font-size:15px;letter-spacing:.5px;text-transform:uppercase;padding:13px;border-radius:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.12s}
+.reroll-btn:active{transform:scale(.98);background:rgba(255,210,74,.16)}
+.reroll-btn .rr-count{font-family:'Archivo';font-weight:800;font-size:11px;opacity:.8;background:rgba(0,0,0,.3);padding:3px 8px;border-radius:20px}
+.side{width:142px;flex-shrink:0;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:12px;padding:8px;max-height:64vh;overflow:auto}
+.minifield{width:150px;flex-shrink:0;background:linear-gradient(180deg,#0d7a48,#064a2b);border:2px solid var(--line);border-radius:12px;padding:8px 4px;display:flex;flex-direction:column;justify-content:space-between;min-height:58vh;position:relative;overflow:hidden}
+.minifield::before{content:"";position:absolute;left:8px;right:8px;top:50%;height:1px;background:rgba(255,255,255,.25)}
+.minifield::after{content:"";position:absolute;left:50%;top:50%;width:46px;height:46px;border:1px solid rgba(255,255,255,.25);border-radius:50%;transform:translate(-50%,-50%)}
+.mf-row{display:flex;justify-content:space-around;align-items:center;gap:2px;position:relative;z-index:1;padding:3px 0}
+.mf-p{display:flex;flex-direction:column;align-items:center;width:42px;min-width:0}
+.mf-dot{width:26px;height:26px;border-radius:50%;background:var(--gold);color:#08130d;font-family:'Anton';font-size:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 5px rgba(0,0,0,.4)}
+.mf-nm{font-size:8px;font-weight:800;text-align:center;line-height:1.05;margin-top:2px;max-width:46px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.8)}
+.mf-cap{font-size:9px;font-weight:900;letter-spacing:.5px;color:var(--gold);text-align:center;margin-bottom:4px;position:relative;z-index:1}
+.side h4{font-family:'Anton';font-size:12px;letter-spacing:1px;color:var(--gold);margin:2px 2px 6px}
+.side .grp{font-size:9px;font-weight:900;letter-spacing:1px;opacity:.5;margin:6px 2px 2px}
+.srow{display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 5px;border-radius:7px;min-height:24px}
+.srow.starter{background:rgba(255,210,74,.08)}
+.srow.bench{background:rgba(255,255,255,.04);opacity:.85}
+.srow .pp{font-family:'Anton';font-size:8px;color:#9fe3bf;min-width:24px;text-align:center;flex-shrink:0}
+.srow .n{flex:1;line-height:1.15;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srow .yr{opacity:.5;font-size:9px}
+.srow .o{font-family:'Anton';color:var(--gold);font-size:10px;min-width:20px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+.tie{text-align:center;margin:8px 0}
+.round-name{font-family:'Anton';font-size:17px;letter-spacing:.5px;color:var(--gold)}
+.scoreboard{background:linear-gradient(180deg,#0c1813,#06100b);border:2px solid var(--line);border-radius:18px;padding:18px 16px;margin:14px 0;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+.team{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;min-height:84px}
+.team .fl{font-size:34px;line-height:1;height:40px;display:flex;align-items:center;justify-content:center}
+.team .tn{font-family:'Anton';font-size:14px;text-align:center;line-height:1.05;letter-spacing:.3px;min-height:30px;display:flex;align-items:center;justify-content:center}
+.team .yr{font-size:11px;opacity:.6;line-height:1}
+.score{font-family:'Anton';font-size:42px;color:var(--gold);min-width:92px;text-align:center;letter-spacing:2px;font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.scorers{margin-top:4px;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.scorers .mn{font-family:'Anton';color:var(--gold);width:38px;flex-shrink:0;font-variant-numeric:tabular-nums;text-align:right}
+.scorers .sc{display:flex;gap:10px;align-items:baseline}
+.subnote{font-size:11.5px;opacity:.7;margin-top:8px;line-height:1.4;border-top:1px solid var(--line);padding-top:8px}
+.result-banner{font-family:'Anton';font-size:22px;text-align:center;padding:10px;border-radius:12px;margin-top:10px}
+.win{background:rgba(46,204,113,.18);color:#7bed9f}.lose{background:rgba(255,77,61,.18);color:#ff8a7d}.draw{background:rgba(255,210,74,.15);color:var(--gold)}
+.gtable{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px;table-layout:fixed}
+.gtable th,.gtable td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.gtable th{font-size:10px;letter-spacing:1px;opacity:.6;text-transform:uppercase}
+.gtable th:first-child,.gtable td:first-child{width:32px}
+.gtable th:nth-child(n+3),.gtable td:nth-child(n+3){width:46px}
+.gtable td.name{text-align:left;font-weight:700;width:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gtable tr.me td{color:var(--gold);font-weight:900}
+.gtable tr.qual td.name::after{content:" ✓";color:#7bed9f}
+.trophy{font-size:72px;text-align:center;animation:bob 2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-12px)}}
+.confetti{position:fixed;top:-10px;width:9px;height:14px;z-index:5;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(105vh) rotate(540deg)}}
+.muted{font-size:12px;opacity:.55;text-align:center;margin-top:16px;line-height:1.5}
+.bench-btn{margin-top:auto;padding-top:14px;display:flex;flex-direction:column;gap:10px}
+#shareCanvas{width:100%;border-radius:14px;border:1px solid var(--line);margin-top:14px;display:none}
+#supportBar{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;justify-content:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(180deg,transparent,rgba(4,10,7,.85) 40%);pointer-events:none}
+#supportBar a{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-family:'Anton';font-size:15px;letter-spacing:.5px;text-transform:uppercase;color:#1a1206;background:linear-gradient(180deg,#ff6b5b,#e8a200);padding:12px 22px;border-radius:30px;box-shadow:0 6px 18px rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.25)}
+#supportBar a:active{transform:translateY(2px)}
+#app{padding-bottom:96px}
+
+
+/* ===== TELA DE REVISÃO DO ELENCO ===== */
+.lineup-review{margin-top:14px;display:flex;flex-direction:column;gap:12px}
+.review-field{width:100%;background:linear-gradient(180deg,#0d7a48,#064a2b);border:2px solid var(--line);border-radius:18px;padding:14px 8px;display:flex;flex-direction:column;justify-content:space-between;min-height:470px;position:relative;overflow:hidden}
+.review-field::before{content:"";position:absolute;left:14px;right:14px;top:50%;height:1px;background:rgba(255,255,255,.25)}
+.review-field::after{content:"";position:absolute;left:50%;top:50%;width:92px;height:92px;border:1px solid rgba(255,255,255,.25);border-radius:50%;transform:translate(-50%,-50%)}
+.review-row{display:flex;justify-content:space-around;align-items:flex-start;gap:4px;position:relative;z-index:1;padding:7px 0}
+.review-p{display:flex;flex-direction:column;align-items:center;min-width:0;flex:1;max-width:92px}
+.review-dot{width:36px;height:36px;border-radius:50%;background:var(--gold);color:#08130d;font-family:'Anton';font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 7px rgba(0,0,0,.45);flex-shrink:0}
+.review-nm{font-size:10px;font-weight:900;text-align:center;line-height:1.05;margin-top:4px;max-width:86px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.9)}
+.review-meta{font-size:8px;font-weight:800;color:#bff0d2;opacity:.9;margin-top:2px}
+.review-bench{background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:14px;padding:10px}
+.review-bench h4{font-family:'Anton';font-size:14px;color:var(--gold);letter-spacing:1px;margin-bottom:8px}
+.review-bench-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+@media (max-width:420px){.review-field{min-height:430px}.review-dot{width:32px;height:32px;font-size:11px}.review-nm{font-size:9px;max-width:72px}.review-row{gap:2px}.review-bench-grid{grid-template-columns:1fr}}
+
+
+/* ===== MODO SOBREVIVÊNCIA ===== */
+.surv-panel{margin-top:16px;background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:16px;padding:14px}
+.surv-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.surv-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:10px 6px;text-align:center}
+.surv-stat .v{font-family:'Anton';font-size:24px;color:var(--gold);line-height:1}
+.surv-stat .l{font-size:9px;font-weight:900;letter-spacing:.8px;opacity:.65;margin-top:4px;text-transform:uppercase}
+.reward-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.reward-card{border:2px solid var(--line);border-radius:14px;padding:14px;background:rgba(0,0,0,.25);cursor:pointer;min-height:92px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.reward-card:active{transform:scale(.98)}
+.reward-card .t{font-family:'Anton';font-size:18px;color:var(--gold);letter-spacing:.4px}
+.reward-card .d{font-size:11px;opacity:.72;line-height:1.35}
+.reward-card.player-pick{min-height:78px}
+.reward-card.player-pick .d{opacity:.85}
+.status-note{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.22);font-size:11.5px;line-height:1.45;opacity:.9}
+.status-note b{color:var(--gold)}
+@media (max-width:420px){.reward-grid{grid-template-columns:1fr}.surv-stats{grid-template-columns:1fr 1fr 1fr}}
+
+/* ===== AJUSTES RESPONSIVOS (telas estreitas) ===== */
+@media (max-width:540px){
+  #app{padding:14px 12px 96px}
+  h1{font-size:clamp(32px,11vw,52px)}
+  .draft-body{flex-direction:column;gap:10px}
+  .draft-cards{width:100%}
+  .side,.minifield{width:100%;max-height:none}
+  .side{display:block}
+  .side .srow{display:inline-flex;width:calc(50% - 4px);box-sizing:border-box;vertical-align:top;margin:2px 1px}
+  .side h4,.side .grp{display:block}
+  .minifield{min-height:auto;padding:12px 8px}
+  .mf-row{padding:6px 0}
+  .mf-dot{width:30px;height:30px;font-size:10px}
+  .mf-nm{font-size:9px;max-width:54px}
+  .pcard{padding:13px}
+  .pcard .nm{font-size:17px}
+  .pcard .ovr{font-size:23px;min-width:36px}
+  .scoreboard{padding:14px 10px;gap:4px}
+  .score{font-size:38px;min-width:74px;letter-spacing:1px}
+  .team .fl{font-size:30px}
+  .team .tn{font-size:12.5px}
+  .round-name{font-size:15px}
+  .gtable{font-size:12px}
+  .gtable th,.gtable td{padding:6px 3px}
+  .gtable td.name{font-size:12px}
+  .btn{font-size:18px;padding:16px}
+  #supportBar a{font-size:14px;padding:11px 18px}
+}
+@media (max-width:360px){
+  .cards,.draft-cards{gap:7px}
+  .score{font-size:32px;min-width:64px}
+  .team .fl{font-size:26px}
+  .pcard .nm{font-size:15px}
+  .gtable th,.gtable td{padding:5px 2px;font-size:11px}
+}
+#app,.screen,.scoreboard,.gtable,.draft-body{max-width:100%}
+img,canvas{max-width:100%}
+</style>
+</head>
+<body>
+<div id="app">
+  <section class="screen active" id="home">
+    <div class="hero">
+      <div class="ball">⚽</div>
+      <div class="kicker">Simulador · 2026</div>
+      <h1>Rumo<span class="em">ao Hexa</span></h1>
+      <p class="sub">Monte o Brasil de todas as eras com convocados reais de 1930 a 2026. Escolha o esquema e a mentalidade, escale 11 + 5 reservas e busque o hexa pelo mata-mata. No fim, compartilhe a imagem da sua campanha.</p>
+    </div>
+    <div class="bench-btn" style="margin-top:0">
+      <button class="btn" onclick="startSetup(false)">🏆 Modo Carreira</button>
+      <button class="btn ghost" onclick="startDaily()">📅 Desafio Diário</button>
+      <button class="btn ghost" onclick="startSurvivalSetup()">🔥 Modo Sobrevivência</button>
+    </div>
+    <p class="muted" id="recordLine">504 convocados · 9 posições · 7 esquemas</p>
+  </section>
+
+  <section class="screen" id="dailyIntro">
+    <div class="topbar"><span class="kicker">Desafio Diário</span></div>
+    <h1 class="scr-title">Desafio<span class="em"> do dia</span></h1>
+    <p class="sub" id="dailyDesc">Todo mundo recebe o MESMO time titular e os MESMOS adversários hoje. Você escolhe só os 5 reservas e a mentalidade. Veja quem vai mais longe!</p>
+    <div id="dailyTeam" class="side" style="width:auto;max-height:42vh;margin-top:14px"></div>
+    <p class="label">Mentalidade</p>
+    <div class="options" id="dMentOpts">
+      <div class="opt sel" data-dment="equilibrado"><span class="t">Equilibrado</span></div>
+      <div class="opt" data-dment="ofensivo"><span class="t">Ofensivo</span></div>
+      <div class="opt" data-dment="defensivo"><span class="t">Defensivo</span></div>
+    </div>
+    <div class="bench-btn"><button class="btn" onclick="startDailyDraft()">Escolher reservas</button></div>
+  </section>
+
+
+  <section class="screen" id="setup">
+    <div class="topbar"><span class="kicker">Preparação</span></div>
+    <h1 class="scr-title">Esquema<span class="em"> tático</span></h1>
+    <div class="grid2" id="formOpts"></div>
+    <p class="label">Mentalidade</p>
+    <div class="options" id="mentOpts">
+      <div class="opt sel" data-ment="equilibrado"><span class="t">Equilibrado</span><span class="d">Sem alterar ataque nem defesa.</span></div>
+      <div class="opt" data-ment="ofensivo"><span class="t">Ofensivo</span><span class="d">Marca mais gols, mas sofre mais.</span></div>
+      <div class="opt" data-ment="defensivo"><span class="t">Defensivo</span><span class="d">Sofre menos, mas cria menos.</span></div>
+    </div>
+    <p class="label">Dificuldade</p>
+    <div class="options" id="diffOpts">
+      <div class="opt sel" data-diff="classico"><span class="t">Clássico</span><span class="d">Notas (overall) visíveis nas cartas.</span></div>
+      <div class="opt" data-diff="cegas"><span class="t">Às Cegas</span><span class="d">Notas escondidas. Só sua memória decide.</span></div>
+    </div>
+    <div class="bench-btn"><button class="btn" onclick="startDraft()">Ir pro Draft</button></div>
+  </section>
+
+  <section class="screen" id="draft">
+    <div class="topbar"><span class="progress" id="draftProg">TITULAR 1/11</span><span class="formation-tag" id="formTag"></span></div>
+    <div class="slot-row" id="slotRow"></div>
+    <div class="pick-head"><div class="pos" id="pickPos">GOLEIRO</div><div class="sm" id="pickSub">Escolha 1 entre as 5 opções</div></div>
+    <div class="draft-body">
+      <div class="draft-cards" id="cardGrid"></div>
+      <div class="side" id="sideList"><h4>Seu elenco</h4></div>
+    </div>
+  </section>
+
+
+
+  <section class="screen" id="lineupReview">
+    <div class="topbar"><span class="progress">ELENCO DEFINIDO</span><span class="formation-tag" id="reviewForm"></span></div>
+    <h1 class="scr-title">Seu<span class="em"> Brasil</span></h1>
+    <p class="sub" style="margin-top:8px">Confira o time escolhido no draft antes de começar a Copa.</p>
+    <div class="ovr-bar" id="reviewOvrBar"></div>
+    <div class="lineup-review">
+      <div class="review-field" id="reviewField"></div>
+      <div class="review-bench" id="reviewBench"></div>
+    </div>
+    <div class="bench-btn"><button class="btn" onclick="confirmTournament()">Começar a Copa</button></div>
+  </section>
+
+
+  <section class="screen" id="survivalReward">
+    <div class="topbar"><span class="progress">MODO SOBREVIVÊNCIA</span><span class="formation-tag" id="survivalStage"></span></div>
+    <h1 class="scr-title">Escolha<span class="em"> sua recompensa</span></h1>
+    <p class="sub" id="survivalRewardText">Vitória conquistada. Escolha um upgrade para continuar a sequência.</p>
+    <div class="surv-panel">
+      <div class="surv-stats">
+        <div class="surv-stat"><div class="v" id="survCups">1</div><div class="l">Copa atual</div></div>
+        <div class="surv-stat"><div class="v" id="survTitles">0</div><div class="l">Títulos</div></div>
+        <div class="surv-stat"><div class="v" id="survWins">0</div><div class="l">Vitórias</div></div>
+      </div>
+      <div class="reward-grid" id="rewardGrid"></div>
+    </div>
+  </section>
+
+  <section class="screen" id="match">
+    <div class="topbar"><span class="progress" id="matchProg">FASE DE GRUPOS</span><span class="formation-tag" id="matchForm"></span></div>
+    <div class="ovr-bar" id="ovrBar"></div>
+    <div class="tie"><div class="round-name" id="roundName">Jogo 1</div></div>
+    <div class="scoreboard">
+      <div class="team"><div class="fl">🇧🇷</div><div class="tn">SEU BRASIL</div><div class="yr">Lendas</div></div>
+      <div class="score" id="scoreNum">0 - 0</div>
+      <div class="team"><div class="fl" id="oppFlag">🏳️</div><div class="tn" id="oppName">—</div><div class="yr" id="oppYear"></div></div>
+    </div>
+    <div class="scorers" id="scorers"></div>
+    <div class="subnote" id="subNote"></div>
+    <div id="matchResult"></div>
+    <div class="bench-btn"><button class="btn" id="matchBtn">Jogar partida</button></div>
+  </section>
+
+  <section class="screen" id="standings">
+    <div class="topbar"><span class="progress" id="standTitle">GRUPO</span></div>
+    <div id="standBody"></div>
+    <div class="bench-btn"><button class="btn" id="standBtn">Continuar</button></div>
+  </section>
+
+  <section class="screen" id="end">
+    <div class="hero" style="text-align:center;flex:0;padding:18px 0 6px">
+      <div class="trophy" id="endIcon">🏆</div>
+      <h1 class="scr-title" id="endTitle" style="font-size:34px">Campeão!</h1>
+      <p class="sub" id="endText" style="text-align:center"></p>
+    </div>
+    <canvas id="shareCanvas" width="1080" height="2160"></canvas>
+    <div style="margin-top:18px;background:linear-gradient(135deg,rgba(255,210,74,.13),rgba(255,107,91,.10));border:2px solid rgba(255,210,74,.45);border-radius:18px;padding:20px 18px;text-align:center">
+      <div style="font-size:28px;margin-bottom:6px">❤️</div>
+      <p style="font-family:'Anton',sans-serif;font-size:20px;color:var(--gold);letter-spacing:.5px;margin-bottom:8px">APOIE O RUMO AO HEXA</p>
+      <p style="font-size:13px;opacity:.85;line-height:1.55;margin-bottom:14px">Este é um projeto <strong>100% independente</strong>, feito com muito amor ao futebol brasileiro. Sem patrocinadores, sem equipe — só um criador tentando manter o projeto vivo. Se você curtiu, considere apoiar!</p>
+      <a href="https://pixgg.com/rumoaohexa" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-family:'Anton',sans-serif;font-size:17px;letter-spacing:.5px;text-transform:uppercase;color:#1a1206;background:linear-gradient(180deg,#ff6b5b,#e8a200);padding:14px 28px;border-radius:30px;box-shadow:0 6px 18px rgba(0,0,0,.4);border:2px solid rgba(255,255,255,.25)">⚽ Apoiar o projeto</a>
+    </div>
+    <div class="bench-btn">
+      <button class="btn" id="genBtn" onclick="generateCard()">Compartilhar</button>
+      <a id="dlLink" style="display:none"><button class="btn ghost">⬇️ Baixar imagem (PNG)</button></a>
+      <button class="btn ghost" onclick="location.reload()">Jogar de novo</button>
+    </div>
+  </section>
+</div>
+
+<div id="supportBar">
+  <a href="https://pixgg.com/rumoaohexa" target="_blank" rel="noopener">❤️ Apoie o Rumo ao Hexa</a>
+</div>
+
+<script>
+const PLAYERS_DB={"GOL":[{"n":"Joel","y":1930,"o":78},{"n":"Velloso","y":1930,"o":77},{"n":"Germano","y":1934,"o":78},{"n":"Roberto Gomes Pedrosa","y":1934,"o":77},{"n":"Walter","y":1938,"o":78},{"n":"Batatais","y":1938,"o":77},{"n":"Barbosa","y":1950,"o":85},{"n":"Castilho","y":1950,"o":79},{"n":"Castilho","y":1954,"o":80},{"n":"Veludo","y":1954,"o":79},{"n":"Cabeção","y":1954,"o":77},{"n":"Gylmar","y":1958,"o":90},{"n":"Castilho","y":1958,"o":80},{"n":"Dida","y":1958,"o":77},{"n":"Gylmar","y":1962,"o":91},{"n":"Castilho","y":1962,"o":81},{"n":"Gylmar","y":1966,"o":88},{"n":"Manga","y":1966,"o":82},{"n":"Félix","y":1970,"o":83},{"n":"Ado","y":1970,"o":78},{"n":"Emerson Leão","y":1970,"o":86},{"n":"Emerson Leão","y":1974,"o":87},{"n":"Renato","y":1974,"o":79},{"n":"Waldir Peres","y":1974,"o":80},{"n":"Emerson Leão","y":1978,"o":87},{"n":"Carlos","y":1978,"o":79},{"n":"Waldir Peres","y":1978,"o":80},{"n":"Waldir Peres","y":1982,"o":80},{"n":"Paulo Sérgio","y":1982,"o":79},{"n":"Carlos","y":1982,"o":79},{"n":"Carlos","y":1986,"o":81},{"n":"Paulo Victor","y":1986,"o":79},{"n":"Emerson Leão","y":1986,"o":85},{"n":"Júlio César","y":1986,"o":77},{"n":"Taffarel","y":1990,"o":86},{"n":"Acácio","y":1990,"o":79},{"n":"Zé Carlos","y":1990,"o":80},{"n":"Taffarel","y":1994,"o":89},{"n":"Zetti","y":1994,"o":80},{"n":"Gilmar Rinaldi","y":1994,"o":80},{"n":"Taffarel","y":1998,"o":88},{"n":"Carlos Germano","y":1998,"o":80},{"n":"Dida","y":1998,"o":82},{"n":"Marcos","y":2002,"o":87},{"n":"Dida","y":2002,"o":86},{"n":"Rogério Ceni","y":2002,"o":82},{"n":"Dida","y":2006,"o":86},{"n":"Rogério Ceni","y":2006,"o":82},{"n":"Júlio César","y":2006,"o":84},{"n":"Júlio César","y":2010,"o":88},{"n":"Gomes","y":2010,"o":81},{"n":"Doni","y":2010,"o":80},{"n":"Jefferson","y":2014,"o":81},{"n":"Júlio César","y":2014,"o":85},{"n":"Victor","y":2014,"o":80},{"n":"Alisson","y":2018,"o":90},{"n":"Cássio","y":2018,"o":83},{"n":"Ederson","y":2018,"o":87},{"n":"Alisson","y":2022,"o":91},{"n":"Weverton","y":2022,"o":80},{"n":"Ederson","y":2022,"o":87},{"n":"Alisson","y":2026,"o":91},{"n":"Ederson","y":2026,"o":87},{"n":"Weverton","y":2026,"o":81}],"LD":[{"n":"Danilo","y":1950,"o":78},{"n":"Djalma Santos","y":1954,"o":90},{"n":"Djalma Santos","y":1958,"o":93},{"n":"Djalma Santos","y":1962,"o":92},{"n":"Djalma Santos","y":1966,"o":86},{"n":"Fidélis","y":1966,"o":79},{"n":"Carlos Alberto Torres","y":1970,"o":94},{"n":"Zé Maria","y":1970,"o":81},{"n":"Zé Maria","y":1974,"o":82},{"n":"Nelinho","y":1974,"o":81},{"n":"Nelinho","y":1978,"o":82},{"n":"Leandro","y":1982,"o":87},{"n":"Édson","y":1986,"o":80},{"n":"Josimar","y":1986,"o":81},{"n":"Jorginho","y":1990,"o":82},{"n":"Jorginho","y":1994,"o":80},{"n":"Cafu","y":1994,"o":87},{"n":"Cafu","y":1998,"o":91},{"n":"Cafu","y":2002,"o":93},{"n":"Cafu","y":2006,"o":88},{"n":"Cicinho","y":2006,"o":81},{"n":"Maicon","y":2010,"o":87},{"n":"Daniel Alves","y":2010,"o":88},{"n":"Daniel Alves","y":2014,"o":87},{"n":"Maicon","y":2014,"o":84},{"n":"Danilo","y":2018,"o":82},{"n":"Fágner","y":2018,"o":80},{"n":"Danilo","y":2022,"o":82},{"n":"Daniel Alves","y":2022,"o":80},{"n":"Wesley","y":2026,"o":82},{"n":"Danilo","y":2026,"o":81}],"LE":[{"n":"Nílton Santos","y":1950,"o":90},{"n":"Nílton Santos","y":1954,"o":93},{"n":"Paulinho de Almeida","y":1954,"o":79},{"n":"Ely","y":1954,"o":79},{"n":"Oreco","y":1958,"o":78},{"n":"Nílton Santos","y":1958,"o":94},{"n":"De Sordi","y":1958,"o":79},{"n":"Nílton Santos","y":1962,"o":93},{"n":"Jair Marinho","y":1962,"o":79},{"n":"Altair","y":1962,"o":79},{"n":"Paulo Henrique","y":1966,"o":80},{"n":"Rildo","y":1966,"o":80},{"n":"Marco Antônio","y":1970,"o":82},{"n":"Everaldo","y":1970,"o":80},{"n":"Marinho Chagas","y":1974,"o":82},{"n":"Marco Antônio","y":1974,"o":80},{"n":"Toninho","y":1978,"o":80},{"n":"Rodrigues Neto","y":1978,"o":80},{"n":"Júnior","y":1982,"o":91},{"n":"Edevaldo","y":1982,"o":80},{"n":"Pedrinho","y":1982,"o":79},{"n":"Branco","y":1986,"o":84},{"n":"Júnior","y":1986,"o":87},{"n":"Branco","y":1990,"o":85},{"n":"Mazinho","y":1990,"o":81},{"n":"Branco","y":1994,"o":86},{"n":"Leonardo","y":1994,"o":87},{"n":"Roberto Carlos","y":1998,"o":93},{"n":"Zé Carlos","y":1998,"o":78},{"n":"Roberto Carlos","y":2002,"o":94},{"n":"Belletti","y":2002,"o":81},{"n":"Júnior","y":2002,"o":90},{"n":"Roberto Carlos","y":2006,"o":90},{"n":"Gilberto","y":2006,"o":79},{"n":"Michel Bastos","y":2010,"o":83},{"n":"Gilberto","y":2010,"o":81},{"n":"Marcelo","y":2014,"o":89},{"n":"Maxwell","y":2014,"o":83},{"n":"Filipe Luís","y":2018,"o":81},{"n":"Marcelo","y":2018,"o":87},{"n":"Alex Sandro","y":2022,"o":80},{"n":"Alex Telles","y":2022,"o":81},{"n":"Alex Sandro","y":2026,"o":83},{"n":"Douglas Santos","y":2026,"o":80}],"ZAG":[{"n":"Fernando","y":1930,"o":80},{"n":"Brilhante","y":1930,"o":80},{"n":"Itália","y":1930,"o":79},{"n":"Zé Luiz","y":1930,"o":79},{"n":"Oscarino","y":1930,"o":78},{"n":"Luiz Luz","y":1934,"o":79},{"n":"Octacílio","y":1934,"o":78},{"n":"Sylvio Hoffman","y":1934,"o":79},{"n":"Nariz","y":1938,"o":80},{"n":"Domingos da Guia","y":1938,"o":92},{"n":"Machado","y":1938,"o":79},{"n":"Jaú","y":1938,"o":81},{"n":"Augusto","y":1950,"o":80},{"n":"Bigode","y":1950,"o":80},{"n":"Ely","y":1950,"o":81},{"n":"Juvenal","y":1950,"o":79},{"n":"Nena","y":1950,"o":78},{"n":"Pinheiro","y":1954,"o":79},{"n":"Alfredo Ramos","y":1954,"o":80},{"n":"Mauro Ramos","y":1954,"o":87},{"n":"Bellini","y":1958,"o":89},{"n":"Zózimo","y":1958,"o":80},{"n":"Orlando Peçanha","y":1958,"o":81},{"n":"Mauro Ramos","y":1958,"o":87},{"n":"Mauro Ramos","y":1962,"o":87},{"n":"Zózimo","y":1962,"o":83},{"n":"Bellini","y":1962,"o":87},{"n":"Jurandir","y":1962,"o":81},{"n":"Bellini","y":1966,"o":85},{"n":"Brito","y":1966,"o":82},{"n":"Altair","y":1966,"o":82},{"n":"Orlando","y":1966,"o":80},{"n":"Brito","y":1970,"o":84},{"n":"Baldocchi","y":1970,"o":80},{"n":"Fontana","y":1970,"o":82},{"n":"Joel Camargo","y":1970,"o":80},{"n":"Luís Pereira","y":1974,"o":82},{"n":"Marinho Peres","y":1974,"o":81},{"n":"Alfredo Mostarda","y":1974,"o":82},{"n":"Oscar","y":1978,"o":87},{"n":"Amaral","y":1978,"o":82},{"n":"Edinho","y":1978,"o":83},{"n":"Abel Braga","y":1978,"o":80},{"n":"Polozzi","y":1978,"o":80},{"n":"Oscar","y":1982,"o":87},{"n":"Luisinho","y":1982,"o":82},{"n":"Juninho Fonseca","y":1982,"o":80},{"n":"Edinho","y":1982,"o":82},{"n":"Oscar","y":1986,"o":87},{"n":"Edinho","y":1986,"o":82},{"n":"Mauro Galvão","y":1986,"o":80},{"n":"Ricardo Gomes","y":1990,"o":82},{"n":"Mozer","y":1990,"o":81},{"n":"Aldair","y":1990,"o":87},{"n":"Ricardo Rocha","y":1990,"o":81},{"n":"Mauro Galvão","y":1990,"o":80},{"n":"Ricardo Rocha","y":1994,"o":80},{"n":"Ronaldão","y":1994,"o":80},{"n":"Aldair","y":1994,"o":89},{"n":"Márcio Santos","y":1994,"o":81},{"n":"Aldair","y":1998,"o":87},{"n":"Júnior Baiano","y":1998,"o":80},{"n":"Gonçalves","y":1998,"o":81},{"n":"André Cruz","y":1998,"o":80},{"n":"Lúcio","y":2002,"o":90},{"n":"Roque Júnior","y":2002,"o":85},{"n":"Edmílson","y":2002,"o":81},{"n":"Anderson Polga","y":2002,"o":81},{"n":"Lúcio","y":2006,"o":90},{"n":"Juan","y":2006,"o":85},{"n":"Luisão","y":2006,"o":82},{"n":"Cris","y":2006,"o":80},{"n":"Lúcio","y":2010,"o":87},{"n":"Juan","y":2010,"o":85},{"n":"Luisão","y":2010,"o":80},{"n":"Thiago Silva","y":2010,"o":89},{"n":"Thiago Silva","y":2014,"o":91},{"n":"David Luiz","y":2014,"o":86},{"n":"Dante","y":2014,"o":83},{"n":"Henrique","y":2014,"o":82},{"n":"Thiago Silva","y":2018,"o":89},{"n":"Miranda","y":2018,"o":84},{"n":"Pedro Geromel","y":2018,"o":82},{"n":"Marquinhos","y":2018,"o":87},{"n":"Thiago Silva","y":2022,"o":88},{"n":"Marquinhos","y":2022,"o":90},{"n":"Éder Militão","y":2022,"o":85},{"n":"Bremer","y":2022,"o":84},{"n":"Marquinhos","y":2026,"o":90},{"n":"Gabriel Magalhães","y":2026,"o":86},{"n":"Bremer","y":2026,"o":82},{"n":"Ibañez","y":2026,"o":81},{"n":"Léo Pereira","y":2026,"o":81},{"n":"Casemiro","y":2018,"o":84},{"n":"Casemiro","y":2022,"o":85},{"n":"Casemiro","y":2026,"o":83},{"n":"Dunga","y":1990,"o":81},{"n":"Dunga","y":1994,"o":84},{"n":"Dunga","y":1998,"o":80}],"VOL":[{"n":"Ivan Mariz","y":1930,"o":79},{"n":"Fortes","y":1930,"o":79},{"n":"Pamplona","y":1930,"o":76},{"n":"Fausto","y":1930,"o":84},{"n":"Benevenuto","y":1930,"o":79},{"n":"Hermógenes","y":1930,"o":80},{"n":"Tinoco","y":1934,"o":76},{"n":"Martim","y":1934,"o":76},{"n":"Canalli","y":1934,"o":79},{"n":"Ariel","y":1934,"o":78},{"n":"Waldir","y":1934,"o":78},{"n":"Britto","y":1938,"o":80},{"n":"Zezé Procópio","y":1938,"o":79},{"n":"Argemiro","y":1938,"o":79},{"n":"Affonsinho","y":1938,"o":78},{"n":"Bauer","y":1950,"o":79},{"n":"Noronha","y":1950,"o":79},{"n":"Brandãozinho","y":1954,"o":76},{"n":"Bauer","y":1954,"o":78},{"n":"Dequinha","y":1954,"o":76},{"n":"Rubens","y":1954,"o":80},{"n":"Dino Sani","y":1958,"o":79},{"n":"Moacir","y":1958,"o":79},{"n":"Zito","y":1958,"o":88},{"n":"Zito","y":1962,"o":89},{"n":"Denílson","y":1966,"o":83},{"n":"Lima","y":1966,"o":81},{"n":"Zito","y":1966,"o":84},{"n":"Wilson Piazza","y":1970,"o":86},{"n":"Clodoaldo","y":1970,"o":87},{"n":"Wilson Piazza","y":1974,"o":85},{"n":"Carpegiani","y":1974,"o":79},{"n":"Toninho Cerezo","y":1978,"o":83},{"n":"Batista","y":1978,"o":79},{"n":"Toninho Cerezo","y":1982,"o":86},{"n":"Falcão","y":1982,"o":91},{"n":"Batista","y":1982,"o":80},{"n":"Falcão","y":1986,"o":87},{"n":"Elzo","y":1986,"o":80},{"n":"Silas","y":1986,"o":83},{"n":"Dunga","y":1990,"o":83},{"n":"Bismarck","y":1990,"o":80},{"n":"Silas","y":1990,"o":80},{"n":"Mauro Silva","y":1994,"o":85},{"n":"Dunga","y":1994,"o":86},{"n":"César Sampaio","y":1998,"o":79},{"n":"Dunga","y":1998,"o":82},{"n":"Emerson","y":1998,"o":81},{"n":"Doriva","y":1998,"o":80},{"n":"Ricardinho","y":2002,"o":80},{"n":"Gilberto Silva","y":2002,"o":85},{"n":"Kléberson","y":2002,"o":80},{"n":"Vampeta","y":2002,"o":83},{"n":"Emerson","y":2006,"o":80},{"n":"Gilberto Silva","y":2006,"o":83},{"n":"Mineiro","y":2006,"o":81},{"n":"Ricardinho","y":2006,"o":84},{"n":"Felipe Melo","y":2010,"o":83},{"n":"Gilberto Silva","y":2010,"o":81},{"n":"Josué","y":2010,"o":84},{"n":"Kléberson","y":2010,"o":83},{"n":"Fernandinho","y":2014,"o":80},{"n":"Luiz Gustavo","y":2014,"o":80},{"n":"Casemiro","y":2018,"o":86},{"n":"Renato Augusto","y":2018,"o":83},{"n":"Fernandinho","y":2018,"o":84},{"n":"Casemiro","y":2022,"o":87},{"n":"Fabinho","y":2022,"o":83},{"n":"Bruno Guimarães","y":2022,"o":85},{"n":"Everton Ribeiro","y":2022,"o":81},{"n":"Casemiro","y":2026,"o":85},{"n":"Bruno Guimarães","y":2026,"o":85},{"n":"Danilo Botafogo","y":2026,"o":80},{"n":"Fabinho","y":2026,"o":83},{"n":"Gérson","y":1966,"o":86},{"n":"Gérson","y":1970,"o":90},{"n":"Rivellino","y":1970,"o":91},{"n":"Rivellino","y":1974,"o":87},{"n":"Rivellino","y":1978,"o":84},{"n":"Lúcio","y":2002,"o":86},{"n":"Lúcio","y":2006,"o":86},{"n":"Lúcio","y":2010,"o":83},{"n":"Thiago Silva","y":2010,"o":86},{"n":"Thiago Silva","y":2014,"o":88},{"n":"Thiago Silva","y":2018,"o":85},{"n":"Thiago Silva","y":2022,"o":84},{"n":"Aldair","y":1990,"o":82},{"n":"Aldair","y":1994,"o":85},{"n":"Aldair","y":1998,"o":83},{"n":"Didi","y":1954,"o":87},{"n":"Didi","y":1958,"o":91},{"n":"Didi","y":1962,"o":89}],"MC":[{"n":"Brandão","y":1938,"o":78},{"n":"Chicão","y":1978,"o":79},{"n":"Mazinho","y":1994,"o":83},{"n":"Leonardo","y":1998,"o":86},{"n":"Ramires","y":2010,"o":83},{"n":"Paulinho","y":2014,"o":81},{"n":"Ramires","y":2014,"o":83},{"n":"Willian","y":2014,"o":84},{"n":"Paulinho","y":2018,"o":81},{"n":"Fred","y":2018,"o":84},{"n":"Willian","y":2018,"o":84},{"n":"Fred","y":2022,"o":81}],"MEI":[{"n":"Rui","y":1950,"o":76},{"n":"Zizinho","y":1950,"o":92},{"n":"Didi","y":1954,"o":89},{"n":"Didi","y":1958,"o":93},{"n":"Pelé","y":1958,"o":95},{"n":"Didi","y":1962,"o":91},{"n":"Zequinha","y":1962,"o":79},{"n":"Mengálvio","y":1962,"o":81},{"n":"Pelé","y":1962,"o":94},{"n":"Gérson","y":1966,"o":88},{"n":"Pelé","y":1966,"o":92},{"n":"Gérson","y":1970,"o":92},{"n":"Rivellino","y":1970,"o":93},{"n":"Pelé","y":1970,"o":99},{"n":"Rivellino","y":1974,"o":89},{"n":"Paulo César Caju","y":1974,"o":79},{"n":"Ademir da Guia","y":1974,"o":83},{"n":"Zico","y":1978,"o":89},{"n":"Rivellino","y":1978,"o":86},{"n":"Sócrates","y":1982,"o":93},{"n":"Zico","y":1982,"o":95},{"n":"Zico","y":1986,"o":91},{"n":"Alemão","y":1986,"o":83},{"n":"Sócrates","y":1986,"o":90},{"n":"Valdo","y":1986,"o":81},{"n":"Alemão","y":1990,"o":83},{"n":"Valdo","y":1990,"o":81},{"n":"Tita","y":1990,"o":79},{"n":"Zinho","y":1994,"o":83},{"n":"Raí","y":1994,"o":88},{"n":"Paulo Sérgio","y":1994,"o":80},{"n":"Giovanni","y":1998,"o":81},{"n":"Rivaldo","y":1998,"o":91},{"n":"Zé Roberto","y":1998,"o":81},{"n":"Rivaldo","y":2002,"o":93},{"n":"Juninho Paulista","y":2002,"o":84},{"n":"Kaká","y":2002,"o":84},{"n":"Ronaldinho Gaúcho","y":2002,"o":90},{"n":"Kaká","y":2006,"o":93},{"n":"Ronaldinho Gaúcho","y":2006,"o":95},{"n":"Zé Roberto","y":2006,"o":80},{"n":"Juninho Pernambucano","y":2006,"o":83},{"n":"Elano","y":2010,"o":84},{"n":"Kaká","y":2010,"o":87},{"n":"Daniel Alves","y":2010,"o":85},{"n":"Júlio Baptista","y":2010,"o":81},{"n":"Oscar","y":2014,"o":85},{"n":"Hernanes","y":2014,"o":80},{"n":"Philippe Coutinho","y":2018,"o":85},{"n":"Lucas Paquetá","y":2022,"o":83},{"n":"Lucas Paquetá","y":2026,"o":83},{"n":"Falcão","y":1982,"o":89},{"n":"Falcão","y":1986,"o":85},{"n":"Júnior","y":1982,"o":87},{"n":"Júnior","y":1986,"o":83},{"n":"Júnior","y":2002,"o":88},{"n":"Neymar","y":2014,"o":88},{"n":"Neymar","y":2018,"o":88},{"n":"Neymar","y":2022,"o":89},{"n":"Neymar","y":2026,"o":86},{"n":"Roberto Carlos","y":1998,"o":88},{"n":"Roberto Carlos","y":2002,"o":90},{"n":"Roberto Carlos","y":2006,"o":85},{"n":"Clodoaldo","y":1970,"o":84},{"n":"Toninho Cerezo","y":1978,"o":81},{"n":"Toninho Cerezo","y":1982,"o":84},{"n":"Tostão","y":1966,"o":82},{"n":"Tostão","y":1970,"o":89}],"PD":[{"n":"Nilo","y":1930,"o":80},{"n":"Carvalho Leite","y":1930,"o":80},{"n":"Russinho","y":1930,"o":81},{"n":"Theóphilo","y":1930,"o":81},{"n":"Poly","y":1930,"o":81},{"n":"Friaça","y":1950,"o":80},{"n":"Julinho Botelho","y":1954,"o":78},{"n":"Maurinho","y":1954,"o":80},{"n":"Garrincha","y":1958,"o":93},{"n":"Mazzola","y":1958,"o":79},{"n":"Pepe","y":1958,"o":80},{"n":"Garrincha","y":1962,"o":97},{"n":"Pepe","y":1962,"o":84},{"n":"Garrincha","y":1966,"o":84},{"n":"Jairzinho","y":1966,"o":84},{"n":"Edu","y":1966,"o":84},{"n":"Jairzinho","y":1970,"o":91},{"n":"Edu","y":1970,"o":84},{"n":"Jairzinho","y":1974,"o":85},{"n":"Valdomiro","y":1974,"o":81},{"n":"Mirandinha","y":1974,"o":81},{"n":"Edu","y":1974,"o":84},{"n":"Zé Sérgio","y":1978,"o":84},{"n":"Gil","y":1978,"o":80},{"n":"Paulo Isidoro","y":1982,"o":81},{"n":"Bernard","y":2014,"o":83},{"n":"Douglas Costa","y":2018,"o":85},{"n":"Raphinha","y":2022,"o":83},{"n":"Antony","y":2022,"o":80},{"n":"Rodrygo","y":2022,"o":84},{"n":"Raphinha","y":2026,"o":86},{"n":"Luiz Henrique","y":2026,"o":82},{"n":"Daniel Alves","y":2010,"o":85},{"n":"Daniel Alves","y":2014,"o":84},{"n":"Daniel Alves","y":2022,"o":78},{"n":"Cafu","y":1994,"o":82},{"n":"Cafu","y":1998,"o":87},{"n":"Cafu","y":2002,"o":89},{"n":"Cafu","y":2006,"o":84},{"n":"Maicon","y":2010,"o":84},{"n":"Maicon","y":2014,"o":84}],"PE":[{"n":"Doca","y":1930,"o":80},{"n":"Moderato","y":1930,"o":78},{"n":"Manoelzinho","y":1930,"o":80},{"n":"Chico","y":1950,"o":78},{"n":"Zagallo","y":1958,"o":88},{"n":"Zagallo","y":1962,"o":88},{"n":"Paulo César Caju","y":1970,"o":83},{"n":"Dadá Maravilha","y":1970,"o":80},{"n":"Dirceu","y":1974,"o":84},{"n":"Dirceu","y":1978,"o":84},{"n":"Éder Aleixo","y":1982,"o":86},{"n":"Dirceu","y":1982,"o":84},{"n":"Edivaldo","y":1986,"o":81},{"n":"Renato Gaúcho","y":1990,"o":83},{"n":"Robinho","y":2006,"o":82},{"n":"Robinho","y":2010,"o":84},{"n":"Neymar","y":2014,"o":90},{"n":"Neymar","y":2018,"o":90},{"n":"Taison","y":2018,"o":84},{"n":"Neymar","y":2022,"o":91},{"n":"Vinícius Júnior","y":2022,"o":88},{"n":"Gabriel Martinelli","y":2022,"o":80},{"n":"Vinícius Júnior","y":2026,"o":90},{"n":"Gabriel Martinelli","y":2026,"o":81},{"n":"Neymar","y":2026,"o":88},{"n":"Ronaldinho Gaúcho","y":2002,"o":88},{"n":"Ronaldinho Gaúcho","y":2006,"o":93},{"n":"Rivaldo","y":1998,"o":89},{"n":"Rivaldo","y":2002,"o":91},{"n":"Raphinha","y":2022,"o":81},{"n":"Raphinha","y":2026,"o":84},{"n":"Gabriel Jesus","y":2018,"o":81},{"n":"Gabriel Jesus","y":2022,"o":81},{"n":"Richarlison","y":2022,"o":82},{"n":"Marcelo","y":2014,"o":85},{"n":"Marcelo","y":2018,"o":83},{"n":"Careca","y":1986,"o":85},{"n":"Careca","y":1990,"o":87},{"n":"Adriano","y":2006,"o":83},{"n":"Endrick","y":2026,"o":81}],"CA":[{"n":"Preguinho","y":1930,"o":83},{"n":"Benedicto","y":1930,"o":79},{"n":"Araken Patusca","y":1930,"o":79},{"n":"Luizinho","y":1934,"o":80},{"n":"Waldemar de Britto","y":1934,"o":79},{"n":"Armandinho","y":1934,"o":81},{"n":"Leônidas da Silva","y":1934,"o":87},{"n":"Áttila","y":1934,"o":81},{"n":"Patesko","y":1934,"o":78},{"n":"Leônidas da Silva","y":1938,"o":92},{"n":"Perácio","y":1938,"o":78},{"n":"Lopes","y":1938,"o":79},{"n":"Hércules","y":1938,"o":81},{"n":"Romeu","y":1938,"o":79},{"n":"Tim","y":1938,"o":81},{"n":"Roberto","y":1938,"o":81},{"n":"Niginho","y":1938,"o":81},{"n":"Adãozinho","y":1950,"o":79},{"n":"Ademir de Menezes","y":1950,"o":90},{"n":"Alfredo","y":1950,"o":81},{"n":"Baltazar","y":1950,"o":81},{"n":"Jair Rosa Pinto","y":1950,"o":84},{"n":"Maneca","y":1950,"o":78},{"n":"Baltazar","y":1954,"o":78},{"n":"Pinga","y":1954,"o":78},{"n":"Humberto","y":1954,"o":78},{"n":"Índio","y":1954,"o":81},{"n":"Vavá","y":1958,"o":87},{"n":"Coutinho","y":1962,"o":86},{"n":"Vavá","y":1962,"o":86},{"n":"Amarildo","y":1962,"o":85},{"n":"Tostão","y":1966,"o":84},{"n":"Tostão","y":1970,"o":91},{"n":"Roberto Miranda","y":1970,"o":83},{"n":"Leivinha","y":1974,"o":83},{"n":"César Maluco","y":1974,"o":83},{"n":"Reinaldo","y":1978,"o":85},{"n":"Jorge Mendonça","y":1978,"o":83},{"n":"Roberto Dinamite","y":1978,"o":86},{"n":"Serginho Chulapa","y":1982,"o":81},{"n":"Roberto Dinamite","y":1982,"o":87},{"n":"Muller","y":1986,"o":84},{"n":"Casagrande","y":1986,"o":80},{"n":"Careca","y":1986,"o":87},{"n":"Careca","y":1990,"o":89},{"n":"Romário","y":1990,"o":88},{"n":"Muller","y":1990,"o":84},{"n":"Bebeto","y":1990,"o":85},{"n":"Bebeto","y":1994,"o":88},{"n":"Romário","y":1994,"o":95},{"n":"Muller","y":1994,"o":84},{"n":"Ronaldo","y":1994,"o":84},{"n":"Viola","y":1994,"o":80},{"n":"Ronaldo","y":1998,"o":96},{"n":"Denílson","y":1998,"o":83},{"n":"Bebeto","y":1998,"o":90},{"n":"Edmundo","y":1998,"o":84},{"n":"Ronaldo","y":2002,"o":98},{"n":"Denílson","y":2002,"o":83},{"n":"Edílson","y":2002,"o":85},{"n":"Luizão","y":2002,"o":81},{"n":"Adriano","y":2006,"o":85},{"n":"Ronaldo","y":2006,"o":90},{"n":"Fred","y":2006,"o":84},{"n":"Luís Fabiano","y":2010,"o":84},{"n":"Nilmar","y":2010,"o":84},{"n":"Grafite","y":2010,"o":84},{"n":"Hulk","y":2014,"o":84},{"n":"Fred","y":2014,"o":83},{"n":"Jô","y":2014,"o":85},{"n":"Gabriel Jesus","y":2018,"o":83},{"n":"Roberto Firmino","y":2018,"o":84},{"n":"Richarlison","y":2022,"o":84},{"n":"Gabriel Jesus","y":2022,"o":83},{"n":"Pedro","y":2022,"o":80},{"n":"Endrick","y":2026,"o":83},{"n":"Matheus Cunha","y":2026,"o":83},{"n":"Rayan","y":2026,"o":79},{"n":"Igor Thiago","y":2026,"o":79},{"n":"Rivaldo","y":1998,"o":89},{"n":"Rivaldo","y":2002,"o":91},{"n":"Kaká","y":2002,"o":82},{"n":"Kaká","y":2006,"o":91},{"n":"Kaká","y":2010,"o":85},{"n":"Robinho","y":2006,"o":80},{"n":"Robinho","y":2010,"o":82},{"n":"Vinícius Júnior","y":2022,"o":86},{"n":"Vinícius Júnior","y":2026,"o":88},{"n":"Zico","y":1978,"o":87},{"n":"Zico","y":1982,"o":93},{"n":"Zico","y":1986,"o":89},{"n":"Sócrates","y":1982,"o":91},{"n":"Sócrates","y":1986,"o":88},{"n":"Neymar","y":2014,"o":88},{"n":"Neymar","y":2018,"o":88},{"n":"Neymar","y":2022,"o":89},{"n":"Neymar","y":2026,"o":86},{"n":"Jairzinho","y":1966,"o":82},{"n":"Jairzinho","y":1970,"o":89},{"n":"Jairzinho","y":1974,"o":83},{"n":"Rodrygo","y":2022,"o":82},{"n":"Gabriel Martinelli","y":2022,"o":78},{"n":"Gabriel Martinelli","y":2026,"o":79}]};
+</script>
+<script>
+const POSNAME={GOL:"GOLEIRO",LD:"LATERAL DIREITO",LE:"LATERAL ESQUERDO",ZAG:"ZAGUEIRO",VOL:"VOLANTE",MC:"MEIA-CENTRAL",MEI:"MEIA",MD:"MEIA-DIREITA",ME:"MEIA-ESQUERDA",PD:"PONTA DIREITA",PE:"PONTA ESQUERDA",CA:"CENTROAVANTE"};
+const POSABBR={GOL:"GOL",LD:"LD",LE:"LE",ZAG:"ZAG",VOL:"VOL",MC:"MC",MEI:"MEI",MD:"MD",ME:"ME",PD:"PD",PE:"PE",CA:"CA"};
+const FACE={GOL:"🧤",LD:"➡️",LE:"⬅️",ZAG:"🛡️",VOL:"🧱",MC:"🎯",MEI:"🪄",MD:"🎯",ME:"🎯",PD:"⚡",PE:"⚡",CA:"🎯"};
+const FORMATIONS={
+  "4-4-2":["GOL","ZAG","ZAG","LD","LE","MC","MEI","MEI","MC","CA","CA"],
+  "4-3-3":["GOL","ZAG","ZAG","LD","LE","VOL","MC","MEI","PD","CA","PE"],
+  "4-5-1":["GOL","ZAG","ZAG","LD","LE","VOL","MD","MEI","ME","MC","CA"],
+  "3-5-2":["GOL","ZAG","ZAG","ZAG","VOL","MD","MEI","ME","MC","CA","CA"],
+  "3-4-3":["GOL","ZAG","ZAG","ZAG","VOL","MC","MEI","MC","PD","CA","PE"],
+  "5-3-2":["GOL","ZAG","ZAG","ZAG","LD","LE","VOL","MC","MEI","CA","CA"],
+  "5-4-1":["GOL","ZAG","ZAG","ZAG","LD","LE","VOL","MC","MEI","MC","CA"]
+};
+// pools de origem no banco para posições "derivadas" (ME/MD usam meias; PE/PD usam pontas+meias ofensivos)
+const POOL_SRC={GOL:["GOL"],LD:["LD"],LE:["LE"],ZAG:["ZAG"],VOL:["VOL"],MC:["MC","MEI"],MEI:["MEI","MC"],
+  MD:["MEI","MC"],ME:["MEI","MC"],PD:["PD","PE"],PE:["PE","PD"],CA:["CA"]};
+// pontas versáteis que TAMBÉM podem ocupar ME/MD (jogavam aberto e por dentro)
+const VERSATILE_WINGERS={
+  ME:["Ronaldinho Gaúcho","Rivaldo","Neymar","Éder Aleixo","Paulo César Caju","Zagallo"],
+  MD:["Garrincha","Jairzinho","Cafu","Mazzola"]
+};
+const FORM_DESC={
+  "4-4-2":"2 zagueiros, 2 laterais, miolo de 4, 2 centroavantes",
+  "4-3-3":"linha de 4, 3 no meio e ataque com 2 pontas",
+  "4-5-1":"meio com 5 (ME/MD), 1 centroavante",
+  "3-5-2":"3 zagueiros, sem laterais, meio com 5 (ME/MD)",
+  "3-4-3":"3 zagueiros e trio de ataque com pontas",
+  "5-3-2":"5 defensores com alas, 3 no meio, 2 frente",
+  "5-4-1":"retranca: 5 defensores, 4 no meio, 1 atacante"
+};
+const BENCH=["GOL","ZAG","MEI","CA","CA"]; // 5 reservas
+const NOPTS=5;
+const SITE_URL="rumoao6.com.br";
+const SHARE_CAPTION="Esse é meu time! Monte o seu em rumoao6.com.br";
+const MENT={equilibrado:{atk:0,def:0},ofensivo:{atk:1.2,def:-1.0},defensivo:{atk:-0.8,def:1.4}};
+
+// Banco de seleções adversárias reais (nome, bandeira, ano de uma campanha marcante, força).
+// Usado para sortear adversários sem repetir país, escalonando força por fase.
+const NATIONS=[
+  {n:"Catar",c:"🇶🇦",y:2022,str:68},{n:"Arábia Saudita",c:"🇸🇦",y:1994,str:69},
+  {n:"Canadá",c:"🇨🇦",y:2022,str:70},{n:"Costa Rica",c:"🇨🇷",y:2014,str:72},
+  {n:"Austrália",c:"🇦🇺",y:2006,str:72},{n:"Camarões",c:"🇨🇲",y:1990,str:74},
+  {n:"Japão",c:"🇯🇵",y:2022,str:75},{n:"Senegal",c:"🇸🇳",y:2002,str:75},
+  {n:"Coreia do Sul",c:"🇰🇷",y:2002,str:75},{n:"EUA",c:"🇺🇸",y:1994,str:75},
+  {n:"Marrocos",c:"🇲🇦",y:2022,str:80},{n:"Nigéria",c:"🇳🇬",y:1994,str:78},
+  {n:"México",c:"🇲🇽",y:1986,str:78},{n:"Suíça",c:"🇨🇭",y:2018,str:78},
+  {n:"Polônia",c:"🇵🇱",y:1974,str:79},{n:"Suécia",c:"🇸🇪",y:1958,str:81},
+  {n:"Dinamarca",c:"🇩🇰",y:1998,str:79},{n:"Chile",c:"🇨🇱",y:1962,str:79},
+  {n:"Bélgica",c:"🇧🇪",y:2018,str:85},{n:"Croácia",c:"🇭🇷",y:2018,str:85},
+  {n:"Portugal",c:"🇵🇹",y:2006,str:85},{n:"Uruguai",c:"🇺🇾",y:1950,str:84},
+  {n:"Inglaterra",c:"🏴󠁧󠁢󠁥󠁮󠁧󠁿",y:1966,str:86},{n:"Holanda",c:"🇳🇱",y:1974,str:88},
+  {n:"Espanha",c:"🇪🇸",y:2010,str:90},{n:"França",c:"🇫🇷",y:1998,str:90},
+  {n:"Itália",c:"🇮🇹",y:2006,str:89},{n:"Alemanha",c:"🇩🇪",y:2014,str:92},
+  {n:"Argentina",c:"🇦🇷",y:1986,str:92}
+];
+// 5 fases de mata-mata (formato 2026: 32 → 16avos)
+const KO_ROUNDS=["16 avos de Final","Oitavas de Final","Quartas de Final","Semifinal","FINAL"];
+// faixas de força por fase (sorteio fica mais difícil ao avançar)
+const KO_STR=[[64,72],[68,77],[74,82],[79,85],[84,92]];
+// Ajuste de zebra no mata-mata: seleções abaixo do bloco tradicional ficam mais acessíveis.
+function knockoutUpsetMod(oppStr){
+  if(oppStr<=72)return {my:0.38,op:-0.42,pen:0.10,label:"zebra"};
+  if(oppStr<=77)return {my:0.24,op:-0.26,pen:0.07,label:"azarão"};
+  if(oppStr<=81)return {my:0.12,op:-0.12,pen:0.04,label:"parelho"};
+  return {my:0,op:0,pen:0,label:"elite"};
+}
+
+let S={formation:"4-4-2",ment:"equilibrado",diff:"classico",starters:[],bench:[],pickPlan:[],pickIndex:0,
+       phase:"group",gIndex:0,koIndex:0,table:[],history:[],groupOpp:[],koOpp:[],daily:false,
+       survival:false,survivalRun:false,survivalCup:1,survivalTitles:0,survivalWins:0,survivalBuffs:{atk:0,mid:0,def:0,gol:0},afterReward:null,
+       status:{},lastLineupNotes:[]};
+
+const $=s=>document.querySelector(s);
+// nome amigável para exibição (remove desambiguações internas)
+const dispName=n=>n.replace(/ Botafogo$/,'');
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('#'+id).classList.add('active');window.scrollTo(0,0)};
+const shuffle=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+function startSetup(daily){
+  S.daily=false;S.survival=false;S.survivalRun=false;S.groupOpp=[];S.koOpp=[];
+  const fo=$('#formOpts');fo.innerHTML='';
+  Object.keys(FORMATIONS).forEach((k,i)=>{
+    const d=document.createElement('div');d.className='opt'+(i===0?' sel':'');d.dataset.form=k;
+    d.innerHTML=`<span class="t">${k}</span><span class="d">${FORM_DESC[k]}</span>`;
+    d.onclick=()=>{document.querySelectorAll('[data-form]').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');S.formation=k};
+    fo.appendChild(d);
+  });
+  S.formation="4-4-2";S.ment="equilibrado";S.diff="classico";
+  bindSel('[data-ment]','ment','ment');bindSel('[data-diff]','diff','diff');
+  show('setup');
+}
+function startSurvivalSetup(){
+  startSetup(false);
+  S.survival=true;
+  const k=$('#setup .kicker'); if(k)k.textContent='Sobrevivência';
+  const title=$('#setup .scr-title'); if(title)title.innerHTML='Modo<span class="em"> sobrevivência</span>';
+  const btn=$('#setup .bench-btn .btn'); if(btn)btn.textContent='Começar Sobrevivência';
+}
+function bindSel(sel,stateKey,dataKey){document.querySelectorAll(sel).forEach(d=>{d.onclick=()=>{document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));d.classList.add('sel');S[stateKey]=d.dataset[dataKey];};});}
+
+/* ---------- DESAFIO DIÁRIO ---------- */
+// RNG determinístico por semente (mulberry32) para o time/adversários do dia
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function seedFromString(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function startDaily(){
+  S.survival=false;S.survivalRun=false;
+  S.daily=true;S.dailyDate=todayKey();
+  const rng=mulberry32(seedFromString('hexa-'+S.dailyDate));
+  const pick=(arr)=>arr[Math.floor(rng()*arr.length)];
+  // esquema fixo do dia + time titular fixo (ponderado por raridade, mas determinístico)
+  const forms=Object.keys(FORMATIONS);S.formation=forms[Math.floor(rng()*forms.length)];
+  S.diff='classico';
+  // monta titulares determinísticos
+  S.starters=[];S.bench=[];
+  const chosen=new Set();
+  FORMATIONS[S.formation].forEach(pos=>{
+    let cand=poolFor(pos).filter(p=>!chosen.has(p.n));
+    // ponderação por raridade com rng
+    const total=cand.reduce((a,p)=>a+weight(p.o),0);let r=rng()*total,sel=cand[cand.length-1];
+    for(const p of cand){r-=weight(p.o);if(r<=0){sel=p;break;}}
+    chosen.add(sel.n);S.starters.push({...sel,pos,c:'🇧🇷'});
+  });
+  // adversários determinísticos do dia
+  const used=new Set();const np=[...NATIONS];
+  // shuffle determinístico
+  for(let i=np.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[np[i],np[j]]=[np[j],np[i]];}
+  const take=(lo,hi)=>{let c=np.filter(x=>!used.has(x.n)&&x.str>=lo&&x.str<=hi);if(!c.length)c=np.filter(x=>!used.has(x.n));const s=c[Math.floor(rng()*c.length)];used.add(s.n);return s;};
+  S.groupOpp=[take(66,74),take(70,79),take(76,83)];
+  S.koOpp=KO_STR.map(([lo,hi])=>take(lo,hi));
+  // mostra o time do dia e deixa escolher só reservas + mentalidade
+  $('#dailyDesc').textContent=`Desafio de ${S.dailyDate}. Todos recebem este mesmo time (${S.formation}) e os mesmos adversários. Escolha só os 5 reservas e a mentalidade!`;
+  const el=$('#dailyTeam');el.innerHTML='<h4>Time titular do dia</h4>';
+  S.starters.forEach(p=>el.appendChild(srow(p,'starter')));
+  document.querySelectorAll('[data-dment]').forEach(d=>{d.onclick=()=>{document.querySelectorAll('[data-dment]').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');S.ment=d.dataset.dment;};});
+  S.ment='equilibrado';
+  show('dailyIntro');
+}
+function startDailyDraft(){
+  // só os 5 reservas; mantém titulares já definidos. Diário não tem re-sorteio (é determinístico).
+  S.bench=[];S.pickIndex=0;S.rerollsLeft=0;
+  S.pickPlan=BENCH.map(p=>({p,type:'bench'}));
+  $('#formTag').textContent='Diário · '+S.formation+' · '+S.ment;
+  show('draft');renderDraftDaily();
+}
+function renderDraftDaily(){S.pickIndexBase=11;renderDraft();}
+
+/* ---------- RANKING LOCAL ---------- */
+function loadStats(){try{return JSON.parse(localStorage.getItem('hexaStats'))||{};}catch(e){return {};}}
+function saveStats(st){try{localStorage.setItem('hexaStats',JSON.stringify(st));}catch(e){}}
+function recordResult(champ,reached){
+  const st=loadStats();
+  st.plays=(st.plays||0)+1;
+  if(champ)st.titles=(st.titles||0)+1;
+  const score=champ?100:reached; // profundidade
+  if(score>(st.best||0)){st.best=score;st.bestLabel=champ?'Hexacampeão':reached+' fases';}
+  saveStats(st);
+  return st;
+}
+function refreshRecordLine(){
+  const st=loadStats();
+  if(st.plays){$('#recordLine').textContent=`🏆 ${st.titles||0} título(s) · ${st.plays} campanha(s) · recorde: ${st.bestLabel||'-'}`;}
+}
+
+function startDraft(){
+  S.daily=false;S.starters=[];S.bench=[];S.pickIndex=0;S.rerollsLeft=2;
+  S.pickPlan=[...FORMATIONS[S.formation].map(p=>({p,type:'starter'})),...BENCH.map(p=>({p,type:'bench'}))];
+  $('#formTag').textContent=(S.survival?'Sobrevivência · ':'')+S.formation+' · '+S.ment;
+  show('draft');renderDraft();
+}
+function weight(o){return Math.pow(0.9,(o-75));}
+// saneamento do banco: remove multifunções forçadas que quebravam o draft
+function sanitizePlayersDB(){
+  const remove={
+    ZAG:['Casemiro','Dunga'],
+    VOL:['Lúcio','Thiago Silva','Aldair','Everton Ribeiro'],
+    MEI:['Roberto Carlos','Marcelo'],
+    PD:['Daniel Alves','Cafu','Maicon'],
+    PE:['Marcelo'],
+    CA:['Rivaldo','Kaká','Robinho','Vinícius Júnior','Zico','Sócrates','Neymar','Jairzinho','Rodrygo','Gabriel Martinelli']
+  };
+  Object.entries(remove).forEach(([pos,names])=>{
+    PLAYERS_DB[pos]=(PLAYERS_DB[pos]||[]).filter(p=>!names.includes(p.n));
+  });
+  // Casemiro pode aparecer como VOL e MC, mas nunca como ZAG.
+  const casemiros=(PLAYERS_DB.VOL||[]).filter(p=>p.n==='Casemiro');
+  PLAYERS_DB.MC=PLAYERS_DB.MC||[];
+  casemiros.forEach(p=>{
+    if(!PLAYERS_DB.MC.some(x=>x.n===p.n&&x.y===p.y))PLAYERS_DB.MC.push({...p,o:Math.max(80,p.o-1)});
+  });
+  // Everton Ribeiro não é volante no draft; entra como meia de criação.
+  PLAYERS_DB.MEI=PLAYERS_DB.MEI||[];
+  if(!PLAYERS_DB.MEI.some(x=>x.n==='Everton Ribeiro'&&x.y===2022))PLAYERS_DB.MEI.push({n:'Everton Ribeiro',y:2022,o:81});
+}
+sanitizePlayersDB();
+
+// posição primária de cada jogador (primeira entrada no banco = posição de origem)
+const PRIMARY_POS=(()=>{const m={};Object.entries(PLAYERS_DB).forEach(([pos,players])=>{players.forEach(p=>{const k=p.n+'|'+p.y;if(!m[k])m[k]=pos;});});return m;})();
+// Ajustes finos de posição e overall para evitar multiposições irreais/discrepâncias grandes.
+const POSITION_LOCKS={
+  "Roberto Carlos":{default:["LE"]},
+  "Marcelo":{default:["LE"]},
+  "Daniel Alves":{default:["LD"],2010:["LD","MEI"]},
+  "Casemiro":{default:["VOL","MC"]},
+  "Dunga":{default:["VOL"]},
+  "Lúcio":{default:["ZAG"]},
+  "Thiago Silva":{default:["ZAG"]},
+  "Aldair":{default:["ZAG"]},
+  "Cafu":{default:["LD"]},
+  "Maicon":{default:["LD"]},
+  "Everton Ribeiro":{default:["MEI","MC"]}
+};
+const RATING_OVERRIDES={
+  // Lendas continuam especiais, mas sem abrir vantagem exagerada no simulador.
+  "Pelé|1970":97,"Ronaldo|2002":96,"Ronaldo|1998":95,"Garrincha|1962":96,
+  "Ronaldinho Gaúcho|2006":93,"Zico|1982":94,"Romário|1994":94,
+  "Carlos Alberto Torres|1970":93,"Nílton Santos|1958":93,"Roberto Carlos|2002":93,
+  // Correções pontuais pedidas + calibração de impacto.
+  "Jairzinho|1966":85,"Jairzinho|1970":92,"Jairzinho|1974":86,
+  "Roberto Dinamite|1978":87,"Roberto Dinamite|1982":88,
+  // Jogadores que estavam inflados em relação ao peso histórico/ano da Copa.
+  "Jô|2014":79,"Grafite|2010":80,"Josué|2010":78,"Kléberson|2010":78,
+  "Bernard|2014":80,"Antony|2022":79,"Rayan|2026":77,"Igor Thiago|2026":77,
+  "Daniel Alves|2022":76,"Daniel Alves|2010":87
+};
+function allowedInPos(p,pos){
+  const lock=POSITION_LOCKS[p.n];if(!lock)return true;
+  const allowed=lock[p.y]||lock.default||[];
+  return allowed.includes(pos);
+}
+function adjustedPlayer(p){
+  const k=p.n+'|'+p.y;
+  return {...p,o:RATING_OVERRIDES[k]??p.o};
+}
+function poolFor(pos){
+  const srcs=POOL_SRC[pos]||[pos];
+  const primarySrc=srcs[0];
+  let arr=[];const seen=new Set();
+  srcs.forEach(s=>(PLAYERS_DB[s]||[]).forEach(raw=>{
+    const p=adjustedPlayer(raw);
+    const k=p.n+'|'+p.y;
+    if(!allowedInPos(p,pos))return;
+    if(!seen.has(k)){seen.add(k);arr.push({...p,_primary:PRIMARY_POS[k]===pos||s===primarySrc});}
+  }));
+  if(VERSATILE_WINGERS[pos]){
+    const wingSrc=pos==='ME'?'PE':'PD';
+    (PLAYERS_DB[wingSrc]||[]).forEach(raw=>{
+      const p=adjustedPlayer(raw);
+      if(!allowedInPos(p,pos))return;
+      if(VERSATILE_WINGERS[pos].includes(p.n)){
+        const k=p.n+'|'+p.y;if(!seen.has(k)){seen.add(k);arr.push({n:p.n,y:p.y,o:Math.max(75,p.o-2),_primary:false});}
+      }
+    });
+  }
+  return arr;
+}
+function drawOptions(pos,n){
+  const chosen=new Set([...S.starters,...S.bench].map(p=>p.n));
+  let cand=poolFor(pos).filter(p=>!chosen.has(p.n));
+  if(cand.length<n)cand=poolFor(pos).slice();
+  const picks=[];
+  const w=(p)=>weight(p.o)*(p._primary===false?0.16:1);
+  for(let k=0;k<n && cand.length;k++){
+    const total=cand.reduce((a,p)=>a+w(p),0);
+    let r=Math.random()*total,sel=cand[cand.length-1];
+    for(const p of cand){r-=w(p);if(r<=0){sel=p;break;}}
+    picks.push(sel);cand=cand.filter(p=>p.n!==sel.n);
+  }
+  return picks;
+}
+function renderDraft(){
+  const plan=S.pickPlan,cur=plan[S.pickIndex],isBench=cur.type==='bench';
+  const sc=S.daily?0:FORMATIONS[S.formation].length;
+  const benchIdx=S.daily?S.pickIndex+1:S.pickIndex-sc+1;
+  $('#draftProg').textContent=isBench?`RESERVA ${benchIdx}/5`:`TITULAR ${S.pickIndex+1}/11`;
+  $('#pickPos').textContent=POSNAME[cur.p]+(isBench?" (banco)":"");
+  $('#pickSub').textContent=isBench?"Reserva — pode entrar durante os jogos":"Escolha 1 entre as 5 opções";
+  const sr=$('#slotRow');sr.innerHTML='';
+  const hasBench=plan.some(s=>s.type==='bench');
+  if(hasBench){const l=document.createElement('div');l.className='slot-lbl';l.textContent='TITULARES';l.style.marginTop='0';sr.appendChild(l);}
+  plan.forEach((s,i)=>{
+    if(i>0 && s.type==='bench' && plan[i-1].type==='starter'){
+      const l=document.createElement('div');l.className='slot-lbl';l.textContent='RESERVAS';sr.appendChild(l);
+    }
+    const m=document.createElement('div');
+    m.className='minislot'+(i<S.pickIndex?' done':'')+(i===S.pickIndex?' cur':'')+(s.type==='bench'?' sub':'');
+    m.textContent=i<S.pickIndex?'✓':POSABBR[s.p];sr.appendChild(m);
+  });
+  S.currentOpts=drawOptions(cur.p,NOPTS);
+  renderCards(cur);
+  renderSide();
+}
+function renderCards(cur){
+  const grid=$('#cardGrid');grid.innerHTML='';
+  S.currentOpts.forEach(p=>{
+    const c=document.createElement('div');c.className='pcard'+(S.diff==='cegas'?' hidden-ovr':'');
+    c.innerHTML=`<div class="face">${FACE[cur.p]}</div><div class="info"><div class="nm">${dispName(p.n)}</div><div class="meta">🇧🇷 Copa ${p.y} · ${POSNAME[cur.p]}</div></div><div class="ovr">${p.o}</div>`;
+    c.onclick=()=>pick(p,cur);grid.appendChild(c);
+  });
+  // botão de re-sortear: só no Modo Clássico e com usos restantes
+  if(S.diff==='classico' && S.rerollsLeft>0){
+    const btn=document.createElement('button');
+    btn.className='reroll-btn';
+    btn.innerHTML=`🎲 Re-sortear opções <span class="rr-count">${S.rerollsLeft} restante${S.rerollsLeft>1?'s':''}</span>`;
+    btn.onclick=()=>reroll(cur);
+    grid.appendChild(btn);
+  }
+}
+function reroll(cur){
+  if(S.rerollsLeft<=0)return;
+  S.rerollsLeft--;
+  S.currentOpts=drawOptions(cur.p,NOPTS);
+  renderCards(cur);
+}
+function pick(p,cur){
+  const entry={...p,pos:cur.p,c:'🇧🇷'};
+  if(cur.type==='bench')S.bench.push(entry);else S.starters.push(entry);
+  S.pickIndex++;
+  if(S.pickIndex>=S.pickPlan.length){showLineupReview();return;}
+  renderDraft();
+}
+function renderSide(){
+  const el=$('#sideList');
+  const choosingBench=S.pickPlan[S.pickIndex] && S.pickPlan[S.pickIndex].type==='bench' && S.starters.length===11;
+  if(choosingBench){
+    // mini-campo com titulares posicionados (GOL em cima, resto embaixo) + reservas já escolhidos
+    el.className='minifield';
+    el.innerHTML=buildMiniField()+`<div class="mf-cap" style="margin-top:4px">RESERVAS ${S.bench.length}/5</div>`+
+      `<div style="position:relative;z-index:1;font-size:8px;text-align:center;line-height:1.4">${S.bench.map(p=>dispName(p.n)).join(' · ')||'—'}</div>`;
+  } else {
+    el.className='side';el.innerHTML='<h4>Seu elenco</h4>';
+    if(S.starters.length){el.innerHTML+='<div class="grp">TITULARES</div>';S.starters.forEach(p=>el.appendChild(srow(p,'starter')));}
+    if(S.bench.length){el.innerHTML+='<div class="grp">RESERVAS</div>';S.bench.forEach(p=>el.appendChild(srow(p,'bench')));}
+  }
+}
+// monta o XI em linhas: GOL | DEF | MEIO | ATAQUE (gol em cima)
+function buildMiniField(){
+  const order={GOL:0,ZAG:1,LD:1,LE:1,VOL:2,MC:2,MEI:2,MD:2,ME:2,PD:3,PE:3,CA:3};
+  const lines=[[],[],[],[]];
+  S.starters.forEach(p=>lines[order[p.pos]].push(p));
+  const sideRank={LE:0,ME:0,PE:0,ZAG:1,VOL:1,MC:1,MEI:1,CA:1,GOL:1,LD:2,MD:2,PD:2};
+  lines.forEach(l=>l.sort((a,b)=>(sideRank[a.pos]??1)-(sideRank[b.pos]??1)));
+  // ordem visual de cima para baixo: GOL, DEF, MEIO, ATAQUE  → invertemos p/ atacar em cima? mantemos gol no topo conforme pedido
+  const rowsHtml=lines.map(line=>{
+    if(!line.length)return '';
+    return `<div class="mf-row">`+line.map(p=>`<div class="mf-p"><div class="mf-dot">${POSABBR[p.pos]}</div><div class="mf-nm">${dispName(p.n)}</div></div>`).join('')+`</div>`;
+  });
+  // gol em cima, depois defesa, meio, ataque
+  return rowsHtml.join('');
+}
+function srow(p,cls){
+  const r=document.createElement('div');r.className='srow '+cls;
+  r.innerHTML=`<span class="pp">${POSABBR[p.pos]}</span><span class="n">${dispName(p.n)} <span class="yr">'${String(p.y).slice(2)}</span></span>${S.diff==='classico'?`<span class="o">${p.o}</span>`:''}`;
+  return r;
+}
+
+function survivalDifficultyBonus(){return S.survival?Math.min(10,(S.survivalCup-1)*3):0;}
+function buffForPos(pos){
+  if(!S.survival||!S.survivalBuffs)return 0;
+  if(pos==='GOL')return S.survivalBuffs.gol||0;
+  if(['ZAG','LD','LE'].includes(pos))return S.survivalBuffs.def||0;
+  if(['VOL','MC','MEI','MD','ME'].includes(pos))return S.survivalBuffs.mid||0;
+  if(['PD','PE','CA'].includes(pos))return S.survivalBuffs.atk||0;
+  return 0;
+}
+function playerPower(p){return p.o+buffForPos(p.pos);}
+function pkey(p){return `${p.n}|${p.y}`;}
+function ensureStatus(){if(!S.status)S.status={};}
+function stOf(p){ensureStatus();const k=pkey(p);if(!S.status[k])S.status[k]={y:0,susp:0,inj:0,reason:''};return S.status[k];}
+function isUnavailable(p){const st=stOf(p);return (st.susp||0)>0||(st.inj||0)>0;}
+function unavailableText(p){const st=stOf(p);if((st.susp||0)>0)return `suspenso (${st.susp} jogo${st.susp>1?'s':''})`;if((st.inj||0)>0)return `${st.reason||'contundido'} (${st.inj} jogo${st.inj>1?'s':''})`;return '';}
+function tickMissedAbsences(players){players.forEach(p=>{const st=stOf(p);if((st.susp||0)>0)st.susp--;if((st.inj||0)>0)st.inj--;if((st.inj||0)<=0)st.reason='';});}
+function buildAvailableLineup(){
+  const used=new Set();const notes=[];const unavailable=[];
+  const availableBench=()=>S.bench.filter(p=>!used.has(pkey(p))&&!isUnavailable(p));
+  const active=S.starters.map(st=>{
+    if(!isUnavailable(st)){used.add(pkey(st));return st;}
+    unavailable.push(st);
+    let rep=availableBench().find(b=>b.pos===st.pos);
+    if(rep){used.add(pkey(rep));notes.push(`${dispName(st.n)} fora (${unavailableText(st)}); entrou ${dispName(rep.n)}.`);return rep;}
+    rep=availableBench()[0];
+    if(rep){used.add(pkey(rep));notes.push(`${dispName(st.n)} fora (${unavailableText(st)}); ${dispName(rep.n)} improvisado em ${POSABBR[st.pos]}.`);return {...rep,pos:st.pos,o:Math.max(70,rep.o-5),impro:true};}
+    notes.push(`${dispName(st.n)} fora (${unavailableText(st)}) e sem substituto disponível.`);return {...st,o:Math.max(65,st.o-10),forced:true};
+  });
+  S.lastLineupNotes=notes;S.missedThisMatch=unavailable;
+  return active;
+}
+// Cartões calibrados para gerar risco no Sobrevivência sem travar a campanha.
+// ZAG/VOL continuam mais expostos, mas a média cai para algo perto de 0,5–0,8 amarelo por jogo.
+const YELLOW_RATE={GOL:.006,ZAG:.105,VOL:.095,LD:.070,LE:.070,MC:.055,MEI:.042,MD:.045,ME:.045,PD:.034,PE:.034,CA:.040};
+const RED_RATE={GOL:.0005,ZAG:.008,VOL:.007,LD:.004,LE:.004,MC:.003,MEI:.002,MD:.002,ME:.002,PD:.0015,PE:.0015,CA:.002};
+const CARD_PROFILE={"Dunga":1.22,"Felipe Melo":1.35,"Mauro Silva":1.18,"Casemiro":1.20,"Luiz Gustavo":1.12,"Batista":1.12,"Zito":1.08,"Clodoaldo":1.08,"Pelé":0.65,"Zico":0.70,"Kaká":0.65,"Ronaldinho Gaúcho":0.70,"Rivaldo":0.76,"Sócrates":0.78,"Didi":0.76};
+function cardMentalityMult(){return S.ment==='defensivo'?1.08:(S.ment==='ofensivo'?0.92:1);}
+function processCards(active){
+  if(!S.survival)return [];
+  const events=[];let redGiven=false;
+  active.forEach(p=>{
+    const prof=CARD_PROFILE[p.n]||1;const posMult=(p.pos==='ZAG'||p.pos==='VOL')&&S.ment==='defensivo'?1.05:1;
+    const yRate=(YELLOW_RATE[p.pos]||.08)*prof*cardMentalityMult()*posMult;
+    const rRate=(RED_RATE[p.pos]||.003)*prof*(S.ment==='defensivo'?1.05:1);
+    const st=stOf(p);
+    if(!redGiven && Math.random()<rRate){st.susp=Math.max(st.susp||0,1);st.y=0;redGiven=true;events.push(`🟥 ${dispName(p.n)} foi expulso e está suspenso por 1 jogo.`);return;}
+    if(Math.random()<yRate){st.y=(st.y||0)+1;events.push(`🟨 ${dispName(p.n)} recebeu amarelo${st.y>=2?' e está suspenso pelo acúmulo.':''}`);if(st.y>=2){st.y=0;st.susp=Math.max(st.susp||0,1);}}
+  });
+  return events;
+}
+function processInjury(active){
+  if(!S.survival)return [];
+  // chance por PARTIDA, não por jogador: dá tensão sem destruir o elenco.
+  if(Math.random()>0.12)return [];
+  const pool=active.filter(p=>p.pos!=='GOL'||Math.random()<0.35);
+  if(!pool.length)return [];
+  const p=shuffle(pool)[0];const st=stOf(p);const severe=Math.random()<0.20;
+  st.inj=Math.max(st.inj||0,severe?2:1);st.reason=severe?'lesão grave':'contusão leve';
+  return [`🩹 ${dispName(p.n)} sofreu ${st.reason} e ficará fora por ${st.inj} jogo${st.inj>1?'s':''}.`];
+}
+function statusSummary(){
+  ensureStatus();const all=[...S.starters,...S.bench];
+  const out=all.filter(p=>isUnavailable(p)).map(p=>`${dispName(p.n)}: ${unavailableText(p)}`);
+  const warned=all.filter(p=>(stOf(p).y||0)===1&&!isUnavailable(p)).map(p=>`${dispName(p.n)} pendurado`);
+  return {out,warned};
+}
+function medicalTargets(){ensureStatus();return [...S.starters,...S.bench].filter(p=>isUnavailable(p));}
+function applyMedicalDepartment(){
+  const targets=medicalTargets().sort((a,b)=>((stOf(b).inj||0)+(stOf(b).susp||0))-((stOf(a).inj||0)+(stOf(a).susp||0)));
+  if(!targets.length)return 'Departamento Médico acionado, mas não havia desfalques no momento.';
+  const p=targets[0],st=stOf(p),txt=`${dispName(p.n)} recuperado/liberado pelo Departamento Médico.`;
+  st.susp=0;st.inj=0;st.reason='';return txt;
+}
+function teamRating(active){
+  const avg=active.reduce((a,p)=>a+playerPower(p),0)/active.length;
+  return avg+5; // bônus menor: mantém o Brasil forte sem deixar o simulador fácil demais
+}
+function pickNations(){
+  // sorteia 3 para o grupo + 5 para o KO, países distintos, escalando força
+  const used=new Set();
+  const pool=shuffle([...NATIONS]);
+  const take=(lo,hi)=>{
+    let cands=pool.filter(x=>!used.has(x.n)&&x.str>=lo&&x.str<=hi);
+    if(!cands.length)cands=pool.filter(x=>!used.has(x.n));
+    const sel=cands[rnd(0,cands.length-1)];used.add(sel.n);return sel;
+  };
+  // grupo: força baixa/média
+  S.groupOpp=[take(66,74),take(70,79),take(76,83)];
+  // KO: escalonado por fase
+  S.koOpp=KO_STR.map(([lo,hi])=>take(lo,hi));
+}
+function buildReviewField(){
+  const order={GOL:0,ZAG:1,LD:1,LE:1,VOL:2,MC:2,MEI:2,MD:2,ME:2,PD:3,PE:3,CA:3};
+  const lines=[[],[],[],[]];
+  S.starters.forEach(p=>lines[order[p.pos]].push(p));
+  const sideRank={LE:0,ME:0,PE:0,ZAG:1,VOL:1,MC:1,MEI:1,CA:1,GOL:1,LD:2,MD:2,PD:2};
+  lines.forEach(l=>l.sort((a,b)=>(sideRank[a.pos]??1)-(sideRank[b.pos]??1)));
+  return lines.map(line=>line.length?`<div class="review-row">${line.map(p=>`<div class="review-p"><div class="review-dot">${POSABBR[p.pos]}</div><div class="review-nm">${dispName(p.n)}</div><div class="review-meta">'${String(p.y).slice(2)} · ${p.o}</div></div>`).join('')}</div>`:'').join('');
+}
+function showLineupReview(){
+  $('#reviewForm').textContent=S.formation+' · '+S.ment;
+  $('#reviewField').innerHTML=buildReviewField();
+  $('#reviewBench').innerHTML='<h4>Reservas</h4><div class="review-bench-grid"></div>';
+  const grid=$('#reviewBench .review-bench-grid');
+  S.bench.forEach(p=>grid.appendChild(srow(p,'bench')));
+  show('lineupReview');
+  const src=$('#ovrBar'),dst=$('#reviewOvrBar');
+  renderOvrBar();
+  dst.innerHTML=src.innerHTML;
+}
+function confirmTournament(){startTournament();}
+function startTournament(){
+  if(S.survival && !S.survivalRun){
+    S.survivalRun=true;S.survivalCup=1;S.survivalTitles=0;S.survivalWins=0;
+    S.survivalBuffs={atk:0,mid:0,def:0,gol:0};S.survivalLog=[];S.status={};S.lastLineupNotes=[];
+  }
+  S.phase="group";S.gIndex=0;S.koIndex=0;
+  if(!S.survival){S.history=[];S.scorers={};S.appearances={};}
+  else{S.scorers=S.scorers||{};S.appearances=S.appearances||{};}
+  pickNations();
+  S.table=[{n:"BRASIL",yr:"Lendas",pts:0,gf:0,ga:0},...S.groupOpp.map(g=>({n:g.n,yr:g.y,pts:0,gf:0,ga:0}))];
+  $('#matchForm').textContent=(S.survival?`Sobrevivência · Copa ${S.survivalCup}`:S.formation+' · '+S.ment);
+  show('match');loadMatch();
+}
+function curOpponent(){
+  const boost=survivalDifficultyBonus();
+  const tune=o=>({...o,baseStr:o.str,str:Math.min(96,o.str+boost)});
+  if(S.phase==="group")return{...tune(S.groupOpp[S.gIndex]),round:`Fase de Grupos · Jogo ${S.gIndex+1}`};
+  return {...tune(S.koOpp[S.koIndex]),round:KO_ROUNDS[S.koIndex]};
+}
+function loadMatch(){
+  const o=curOpponent();
+  renderOvrBar();
+  $('#matchProg').textContent=(S.phase==="group"?"FASE DE GRUPOS":o.round).toUpperCase();
+  $('#roundName').textContent=`${o.round} · vs ${o.n} ${o.y}`;
+  $('#oppFlag').textContent=o.c;$('#oppName').textContent=o.n;$('#oppYear').textContent=o.y;
+  $('#scoreNum').textContent='0 - 0';$('#scorers').innerHTML='';$('#subNote').textContent='';$('#matchResult').innerHTML='';
+  if(S.survival){const ss=statusSummary();const bits=[];if(ss.out.length)bits.push('<b>Desfalques:</b> '+ss.out.join(' · '));if(ss.warned.length)bits.push('<b>Pendurados:</b> '+ss.warned.join(' · '));if(bits.length)$('#matchResult').innerHTML='<div class="status-note">'+bits.join('<br>')+'</div>';}
+  const b=$('#matchBtn');b.disabled=false;b.textContent='Jogar partida';b.onclick=playMatch;
+}
+function renderOvrBar(){
+  const ov=teamOveralls();const bar=$('#ovrBar');if(!bar)return;
+  bar.innerHTML=`
+    <div class="ovr-cell geral"><div class="v">${ov.geral}</div><div class="l">GERAL</div></div>
+    <div class="ovr-cell"><div class="v">${ov.def}</div><div class="l">DEFESA</div></div>
+    <div class="ovr-cell"><div class="v">${ov.mid}</div><div class="l">MEIO</div></div>
+    <div class="ovr-cell"><div class="v">${ov.atk}</div><div class="l">ATAQUE</div></div>`;
+}
+function playMatch(){
+  const o=curOpponent();
+  let active=buildAvailableLineup();const subs=[];
+  const usedActive=new Set(active.map(p=>pkey(p)));
+  const benchPool=shuffle([...S.bench].filter(p=>!isUnavailable(p)&&!usedActive.has(pkey(p))));
+  const nSubs=rnd(0,Math.min(3,benchPool.length));
+  for(let i=0;i<nSubs;i++){
+    const inP=benchPool[i];const names=new Set(active.map(p=>p.n));
+    if(names.has(inP.n))continue;
+    // RESERVA SÓ ENTRA NA MESMA POSIÇÃO (goleiro só por goleiro, etc.)
+    let idx=active.findIndex((p,ix)=>ix>0 && p.pos===inP.pos);
+    if(idx<0){
+      // GK reserva pode trocar o GK titular (índice 0)
+      if(inP.pos==='GOL' && active[0].pos==='GOL')idx=0; else continue;
+    }
+    subs.push({inP,out:active[idx],mn:rnd(46,85)});active[idx]=inP;
+  }
+  const opp=o.str,m=MENT[S.ment];
+  // overalls setoriais do time EM CAMPO (com subs aplicadas)
+  const defPos=["GOL","ZAG","LD","LE"],atkPos=["PD","PE","CA"];
+  const avgOf=arr=>arr.length?arr.reduce((a,p)=>a+playerPower(p),0)/arr.length:80;
+  const defR=avgOf(active.filter(p=>defPos.includes(p.pos)))+5;   // bônus menor para equilíbrio
+  const atkR=avgOf(active.filter(p=>atkPos.includes(p.pos)))+5;
+  const myR=teamRating(active);                                    // força geral (p/ pênaltis etc.)
+  // placar realista: ATAQUE meu define meus gols; DEFESA minha reduz gols do adversário
+  const gapAtk=Math.max(-0.75,Math.min(0.75,(atkR-opp)/16));   // meu ataque vs força adversária
+  const gapDef=Math.max(-0.75,Math.min(0.75,(defR-opp)/16));   // minha defesa vs força adversária
+  const isKO=S.phase==="ko";
+  const noise=()=>(Math.random()-0.5)*0.34;
+  const koMod=isKO?knockoutUpsetMod(opp):{my:0,op:0,pen:0,label:"grupo"};
+  const lamMy=Math.max(0.28,1.20+gapAtk*0.82+m.atk*0.22+koMod.my+noise());
+  const lamOp=Math.max(0.22,1.20-gapDef*0.82-m.def*0.20+koMod.op+noise());
+  const damp=(g,isKO)=>{
+    // no mata-mata, reduz chance de goleadas extravagantes ainda mais
+    const lim=isKO?4:5;
+    while(g>=lim && Math.random()<0.72)g--;
+    return Math.min(g,isKO?5:6);
+  };
+  const mg=damp(samplePoisson(lamMy),isKO);
+  let og=damp(samplePoisson(lamOp),isKO);
+  const att=active.filter(p=>["CA","PD","PE","MEI","MC","MD","ME"].includes(p.pos));
+  const mins=shuffle([...Array(90).keys()].map(x=>x+1)).slice(0,mg+og).sort((a,b)=>a-b);
+  const sc=[];let mc=0,oc=0;
+  mins.forEach(mn=>{if(mc<mg&&(oc>=og||Math.random()<mg/(mg+og||1))){sc.push({mn,txt:att.length?dispName(att[rnd(0,att.length-1)].n):'Brasil',me:true});mc++;}else{sc.push({mn,txt:o.n,me:false});oc++;}});
+  // contabiliza gols por jogador (artilheiro) e quem jogou (para o craque)
+  if(!S.scorers)S.scorers={};
+  sc.forEach(e=>{if(e.me)S.scorers[e.txt]=(S.scorers[e.txt]||0)+1;});
+  if(!S.appearances)S.appearances={};
+  active.forEach(p=>{S.appearances[dispName(p.n)]=(S.appearances[dispName(p.n)]||0)+1;});
+  // pênaltis: só no mata-mata e só se empatar no tempo normal
+  let pen=null;
+  if(S.phase==="ko" && mg===og){
+    pen=simPenalties(active,o);
+  }
+  // animação leve: placar sobe em ~0.5s
+  animateScore(mg,og);
+  $('#scorers').innerHTML=sc.map(e=>`<div class="sc"><span class="mn">${e.mn}'</span><span>⚽ ${e.me?e.txt:o.n}</span></div>`).join('');
+  let notes=[];
+  if(S.lastLineupNotes&&S.lastLineupNotes.length)notes=notes.concat(S.lastLineupNotes);
+  notes.push(subs.length?('Substituições: '+subs.map(s=>`${dispName(s.out.n)} ⇄ ${dispName(s.inP.n)} (${s.mn}')`).join(' · ')):'Sem substituições nesta partida.');
+  const cardEvents=processCards(active);
+  const injuryEvents=processInjury(active);
+  if(S.missedThisMatch)tickMissedAbsences(S.missedThisMatch);
+  notes=notes.concat(cardEvents,injuryEvents);
+  $('#subNote').innerHTML=notes.join('<br>');
+  finishMatch(mg,og,o,pen);
+}
+// disputa de pênaltis: melhor de 5 + morte súbita. Vantagem leve ao maior overall
+// e bônus de defesa conforme o goleiro em campo.
+function simPenalties(active,o){
+  const gk=active.find(p=>p.pos==='GOL');
+  const gkRating=gk?playerPower(gk):80;
+  const myTeam=teamRating(active);
+  const koMod=knockoutUpsetMod(o.str);
+  // probabilidade de converter cada cobrança; contra zebras, o Brasil tem vantagem mental/técnica maior
+  const myConv=0.74+(myTeam-82)*0.003+koMod.pen;
+  const opConv=0.74+(o.str-82)*0.003-koMod.pen*0.55;
+  // chance do MEU goleiro defender (acima do baseline) e do goleiro adversário
+  const myKeeperSave=(gkRating-80)*0.009;          // bônus do goleiro calibrado
+  const opKeeperSave=(o.str-82)*0.005;
+  let me=0,op=0,shots=[];
+  const kick=(conv,save)=>{ // conv do cobrador, save do goleiro adversário
+    const p=Math.max(0.45,Math.min(0.95,conv-save));
+    return Math.random()<p;
+  };
+  // 5 cobranças cada, alternadas
+  for(let i=0;i<5;i++){
+    const m=kick(myConv,opKeeperSave); if(m)me++; shots.push({me:true,ok:m});
+    const e=kick(opConv,myKeeperSave); if(e)op++; shots.push({me:false,ok:e});
+    // encerramento antecipado matemático (simplificado: deixamos rodar 5 para mostrar a sequência)
+  }
+  // morte súbita se empatou
+  let guard=0;
+  while(me===op && guard<10){
+    const m=kick(myConv,opKeeperSave); const e=kick(opConv,myKeeperSave);
+    shots.push({me:true,ok:m,sd:true});shots.push({me:false,ok:e,sd:true});
+    if(m)me++; if(e)op++; guard++;
+  }
+  if(me===op){ if(Math.random()<0.5)me++; else op++; } // desempate final de segurança
+  return {me,op,win:me>op,shots};
+}
+function animateScore(mg,og){
+  const el=$('#scoreNum');const steps=Math.max(mg,og,1);let i=0;
+  el.textContent='0 - 0';
+  const t=setInterval(()=>{i++;el.textContent=`${Math.min(i,mg)} - ${Math.min(i,og)}`;if(i>=steps)clearInterval(t);},Math.min(160,500/steps));
+}
+function finishMatch(mg,og,o,pen){
+  const res=$('#matchResult'),b=$('#matchBtn');
+  let won=mg>og,drew=mg===og;
+  // no mata-mata, empate vai para os pênaltis
+  let penStr='';
+  if(S.phase==="ko" && drew && pen){
+    won=pen.win; drew=false;
+    penStr=` (${pen.me}-${pen.op} pen)`;
+    // sequência visual de cobranças
+    const seq=pen.shots.map(s=>`<span style="color:${s.ok?'#7bed9f':'#ff8a7d'}">${s.ok?'⚽':'✗'}</span>`).join(' ');
+    $('#scorers').innerHTML += `<div class="sc" style="margin-top:8px;border-top:1px solid var(--line);padding-top:8px"><span class="mn">PEN</span><span>Disputa de pênaltis — ${pen.win?'Brasil avança':o.n+' avança'} (${pen.me} x ${pen.op})</span></div>`;
+    $('#subNote').innerHTML += `<div style="margin-top:6px">Cobranças: ${seq}</div>`;
+  }
+  const bannerCls=drew?'draw':(won?'win':'lose');
+  const verb = (S.phase==="ko"&&penStr) ? (won?'Vitória nos pênaltis':'Derrota nos pênaltis') : (won?'Vitória':drew?'Empate':'Derrota');
+  res.innerHTML=`<div class="result-banner ${bannerCls}">${verb} ${mg} a ${og}${penStr}</div>`;
+  S.history.push({round:S.phase==="group"?`Copa ${S.survivalCup||1} · Grupos J${S.gIndex+1}`:S.survival?`Copa ${S.survivalCup} · ${o.round}`:o.round,opp:`${o.n} ${o.y}`,flag:o.c,mg,og,pen:penStr,res:won?'V':drew?'E':'D'});
+  if(won && S.survival)S.survivalWins=(S.survivalWins||0)+1;
+  const rewardGate=(next)=>{
+    if(won && S.survival){b.textContent='Escolher recompensa';b.onclick=()=>showSurvivalReward(next);}
+    else next(false);
+  };
+  if(S.phase==="group"){
+    const me=S.table.find(t=>t.n==="BRASIL"),ad=S.table.find(t=>t.n===o.n);
+    me.gf+=mg;me.ga+=og;ad.gf+=og;ad.ga+=mg;
+    if(won)me.pts+=3;else if(drew){me.pts++;ad.pts++;}else ad.pts+=3;
+    simOtherGroupGame();
+    const next=()=>{ if(S.gIndex>=S.groupOpp.length-1)showStandings(); else {S.gIndex++;loadMatch();} };
+    b.textContent=(S.gIndex>=S.groupOpp.length-1)?'Ver classificação':'Próximo jogo →';
+    b.onclick=()=>rewardGate(next);
+    return;
+  }
+  if(!won){b.textContent='Ver resultado';b.onclick=()=>endGame(false,o);return;}
+  if(S.koIndex>=S.koOpp.length-1){
+    if(S.survival){b.textContent='Escolher recompensa';b.onclick=()=>showSurvivalReward(()=>survivalCupWon(o));}
+    else{b.textContent='🏆 Erguer a taça';b.onclick=()=>endGame(true,o);}
+    return;
+  }
+  b.textContent='Próxima fase →';b.onclick=()=>rewardGate(()=>{S.koIndex++;loadMatch();});
+}
+function survivalRank(){
+  const t=S.survivalTitles||0;
+  if(t>=5)return 'Império Brasileiro';
+  if(t>=3)return 'Dinastia Brasileira';
+  if(t===2)return 'Bicampeão da Sobrevivência';
+  if(t===1)return 'Campeão da Copa 1';
+  return 'Sobrevivente em construção';
+}
+function showSurvivalReward(next){
+  S.afterReward=next;
+  $('#survivalStage').textContent=`Copa ${S.survivalCup} · dificuldade +${survivalDifficultyBonus()}`;
+  $('#survCups').textContent=S.survivalCup||1;
+  $('#survTitles').textContent=S.survivalTitles||0;
+  $('#survWins').textContent=S.survivalWins||0;
+  $('#survivalRewardText').textContent='Vitória conquistada. Escolha um upgrade permanente para esta sequência.';
+  const rewards=[
+    ['atk','+2 Ataque','Melhora pontas e centroavantes.'],
+    ['mid','+2 Meio','Melhora volantes, meias e armadores.'],
+    ['def','+2 Defesa','Melhora zagueiros e laterais.'],
+    ['gol','+1 Goleiro','Melhora goleiro e pênaltis.'],
+    ['all','+1 Geral','Pequeno ganho em todos os setores.'],
+    ['med','🩺 Departamento Médico','Recupera 1 jogador lesionado ou limpa 1 suspensão.'],
+    ['reroll','🎲 Reroll de Jogador','Escolha 1 atleta do elenco e troque por nova opção da mesma posição.']
+  ];
+  const grid=$('#rewardGrid');grid.innerHTML='';
+  rewards.forEach(([id,t,d])=>{
+    const card=document.createElement('div');card.className='reward-card';
+    card.innerHTML=`<div class="t">${t}</div><div class="d">${d}</div>`;
+    card.onclick=()=>applySurvivalReward(id);grid.appendChild(card);
+  });
+  show('survivalReward');
+}
+function applySurvivalReward(id){
+  S.survivalBuffs=S.survivalBuffs||{atk:0,mid:0,def:0,gol:0};
+  if(id==='atk')S.survivalBuffs.atk+=2;
+  else if(id==='mid')S.survivalBuffs.mid+=2;
+  else if(id==='def')S.survivalBuffs.def+=2;
+  else if(id==='gol')S.survivalBuffs.gol+=1;
+  else if(id==='all'){S.survivalBuffs.atk++;S.survivalBuffs.mid++;S.survivalBuffs.def++;S.survivalBuffs.gol++;}
+  else if(id==='med'){const msg=applyMedicalDepartment();S.survivalLog=S.survivalLog||[];S.survivalLog.push(msg);}
+  else if(id==='reroll'){showSurvivalRerollPicker();return;}
+  continueAfterSurvivalReward();
+}
+function continueAfterSurvivalReward(){
+  const next=S.afterReward;S.afterReward=null;
+  if(typeof next==='function'){next();return;}
+  // fallback defensivo para nunca deixar a tela de recompensa travada
+  if(S.phase==='group'){ if(S.gIndex>=S.groupOpp.length-1)showStandings(); else {S.gIndex++;loadMatch();} }
+  else if(S.phase==='ko'){ if(S.koIndex>=S.koOpp.length-1)survivalCupWon(S.koOpp[S.koIndex]||{}); else {S.koIndex++;loadMatch();} }
+  else loadMatch();
+}
+function showSurvivalRerollPicker(){
+  $('#survivalRewardText').textContent='Escolha o jogador que será substituído. O novo atleta virá da mesma posição.';
+  const grid=$('#rewardGrid');grid.innerHTML='';
+  const roster=[...S.starters.map((p,i)=>({...p,_list:'starters',_idx:i,_role:'Titular'})),...S.bench.map((p,i)=>({...p,_list:'bench',_idx:i,_role:'Reserva'}))];
+  roster.forEach(p=>{
+    const card=document.createElement('div');card.className='reward-card player-pick';
+    card.innerHTML=`<div class="t">${dispName(p.n)}</div><div class="d">${p._role} · ${POSABBR[p.pos]} · Copa ${p.y} · ${p.o}</div>`;
+    card.onclick=()=>showSurvivalRerollOptions(p);grid.appendChild(card);
+  });
+}
+function showSurvivalRerollOptions(oldP){
+  $('#survivalRewardText').textContent=`Trocar ${dispName(oldP.n)} (${POSABBR[oldP.pos]}). Escolha o substituto.`;
+  const grid=$('#rewardGrid');grid.innerHTML='';
+  let opts=drawOptions(oldP.pos,4).filter(p=>p.n!==oldP.n);
+  if(!opts.length)opts=poolFor(oldP.pos).filter(p=>p.n!==oldP.n).slice(0,4);
+  opts.forEach(p=>{
+    const card=document.createElement('div');card.className='reward-card player-pick';
+    card.innerHTML=`<div class="t">${dispName(p.n)}</div><div class="d">${POSABBR[oldP.pos]} · Copa ${p.y} · ${p.o}</div>`;
+    card.onclick=()=>applySurvivalPlayerReroll(oldP,p);grid.appendChild(card);
+  });
+  const back=document.createElement('div');back.className='reward-card player-pick';
+  back.innerHTML='<div class="t">Voltar</div><div class="d">Escolher outro jogador do elenco.</div>';
+  back.onclick=showSurvivalRerollPicker;grid.appendChild(back);
+}
+function applySurvivalPlayerReroll(oldP,newP){
+  const entry={...newP,pos:oldP.pos,c:'🇧🇷'};
+  if(oldP._list==='starters')S.starters[oldP._idx]=entry;else S.bench[oldP._idx]=entry;
+  if(S.status){delete S.status[pkey(oldP)];delete S.status[pkey(entry)];}
+  S.survivalLog=S.survivalLog||[];S.survivalLog.push(`${dispName(oldP.n)} saiu no reroll; entrou ${dispName(entry.n)}.`);
+  continueAfterSurvivalReward();
+}
+function survivalCupWon(o){
+  S.survivalTitles=(S.survivalTitles||0)+1;
+  burstConfetti();
+  show('end');
+  $('#endIcon').textContent='🏆';
+  $('#endTitle').textContent=S.survivalTitles>=3?'DINASTIA!':'COPA VENCIDA!';
+  $('#endText').textContent=`Você venceu a Copa ${S.survivalCup}. Recorde atual: ${survivalRank()}. A próxima Copa terá adversários mais fortes.`;
+  const wrap=$('#end .bench-btn');
+  wrap.innerHTML=`<button class="btn" onclick="startNextSurvivalCup()">Próxima Copa →</button><button class="btn ghost" id="genBtn" onclick="generateCard()">Compartilhar sequência</button><a id="dlLink" style="display:none"><button class="btn ghost">⬇️ Baixar imagem (PNG)</button></a><button class="btn ghost" onclick="location.reload()">Encerrar</button>`;
+}
+function startNextSurvivalCup(){
+  S.survivalCup=(S.survivalCup||1)+1;
+  S.groupOpp=[];S.koOpp=[];
+  startTournament();
+}
+
+function simOtherGroupGame(){
+  const others=S.table.filter(t=>t.n!=="BRASIL");
+  const pair=others.filter((_,ix)=>ix!==S.gIndex);const A=pair[0],B=pair[1];if(!A||!B)return;
+  const sA=S.groupOpp.find(g=>g.n===A.n).str,sB=S.groupOpp.find(g=>g.n===B.n).str;
+  const gpa=Math.max(-0.9,Math.min(0.9,(sA-sB)/14)),nz=()=>(Math.random()-0.5)*0.5;
+  const dmp=(g)=>{while(g>=4&&Math.random()<0.62)g--;return Math.min(g,6);};
+  const gA=dmp(samplePoisson(Math.max(.25,1.28+gpa*0.8+nz()))),gB=dmp(samplePoisson(Math.max(.25,1.28-gpa*0.8+nz())));
+  A.gf+=gA;A.ga+=gB;B.gf+=gB;B.ga+=gA;
+  if(gA>gB)A.pts+=3;else if(gB>gA)B.pts+=3;else{A.pts++;B.pts++;}
+}
+function showStandings(){
+  show('standings');$('#standTitle').textContent='CLASSIFICAÇÃO DO GRUPO';
+  const sorted=[...S.table].sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf);
+  const top2=sorted.slice(0,2).map(t=>t.n);
+  let html='<table class="gtable"><tr><th>#</th><th>Seleção</th><th>P</th><th>GP</th><th>GC</th><th>SG</th></tr>';
+  sorted.forEach((t,i)=>{const me=t.n==="BRASIL",q=top2.includes(t.n);
+    const label=me?t.n:`${t.n} <span style="opacity:.55;font-weight:400">${t.yr}</span>`;
+    html+=`<tr class="${me?'me':''} ${q?'qual':''}"><td>${i+1}</td><td class="name">${label}</td><td>${t.pts}</td><td>${t.gf}</td><td>${t.ga}</td><td>${t.gf-t.ga>=0?'+':''}${t.gf-t.ga}</td></tr>`;});
+  html+='</table>';
+  const adv=top2.includes("BRASIL");
+  S.groupResult=adv?('Avançou em '+(top2[0]==='BRASIL'?'1º':'2º')+' no grupo'):'Eliminado na fase de grupos';
+  html+=`<p class="sub" style="text-align:center;margin-top:14px">${adv?'✅ Brasil avançou em '+(top2[0]==='BRASIL'?'1º':'2º')+' lugar!':'❌ Brasil ficou pelo caminho na fase de grupos.'}</p>`;
+  $('#standBody').innerHTML=html;
+  const b=$('#standBtn');
+  if(adv){b.textContent='Ir pro mata-mata →';b.onclick=()=>{S.phase="ko";S.koIndex=0;show('match');loadMatch();};}
+  else{b.textContent='Ver resultado';b.onclick=()=>endGame(false,{c:"🌍",n:"Fase de Grupos",y:"",round:"Fase de Grupos"});}
+}
+function endGame(champ,o){
+  S.champ=champ;show('end');
+  const endBtns=$('#end .bench-btn');
+  if(endBtns)endBtns.innerHTML=`<button class="btn" id="genBtn" onclick="generateCard()">Compartilhar</button><a id="dlLink" style="display:none"><button class="btn ghost">⬇️ Baixar imagem (PNG)</button></a><button class="btn ghost" onclick="location.reload()">Jogar de novo</button>`;
+  // profundidade: grupos=2, cada fase KO soma; final/título=máximo
+  let reached;
+  if(champ)reached=8;
+  else if(o.round==="Fase de Grupos")reached=1;
+  else reached=2+KO_ROUNDS.indexOf(o.round); // 16avos=2 ... semi=6
+  const st=recordResult(champ,reached);
+  if(champ){$('#endIcon').textContent='🏆';$('#endTitle').textContent='HEXACAMPEÃO!';$('#endText').textContent=`Seu Brasil levantou a taça com ${S.formation} (${S.ment})${S.daily?' no Desafio Diário':''}. É HEXA!`;burstConfetti();}
+  else if(S.survival){$('#endIcon').textContent='🔥';$('#endTitle').textContent='Sobrevivência encerrada';const where=o.round==="Fase de Grupos"?"na fase de grupos":`nas ${o.round.toLowerCase()} para ${o.c} ${o.n} ${o.y}`;$('#endText').textContent=`Você caiu ${where}. Títulos seguidos: ${S.survivalTitles||0}. Ranking: ${survivalRank()}.`;S.survivalRun=false;}
+  else{$('#endIcon').textContent='😞';$('#endTitle').textContent='Fim da linha';const where=o.round==="Fase de Grupos"?"ainda na fase de grupos":`nas ${o.round.toLowerCase()} para ${o.c} ${o.n} ${o.y}`;$('#endText').textContent=`O Brasil caiu ${where}. ${st.titles?`Você já tem ${st.titles} título(s).`:'O hexa fica pra próxima!'}`;}
+}
+function samplePoisson(l){let L=Math.exp(-l),k=0,p=1;do{k++;p*=Math.random()}while(p>L);return k-1;}
+function burstConfetti(){const cols=['#ffd24a','#2ecc71','#ff4d3d','#3498db','#fff'];for(let i=0;i<60;i++){const c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'vw';c.style.background=cols[rnd(0,4)];c.style.animationDuration=(2+Math.random()*2)+'s';c.style.animationDelay=Math.random()+'s';document.body.appendChild(c);setTimeout(()=>c.remove(),5000);}}
+
+/* ---------- CARD PNG ---------- */
+// pilhas de fonte com fallback forte (se Anton/Archivo não carregarem, usa sans-serif legível)
+const FA='Anton, "Arial Black", Impact, sans-serif';
+const FB='Archivo, Arial, "Helvetica Neue", sans-serif';
+// calcula destaques da campanha para o card
+// overalls do time (geral + setores) a partir dos titulares
+function teamOveralls(){
+  const def=["GOL","ZAG","LD","LE"],mid=["VOL","MC","MEI","MD","ME"],atk=["PD","PE","CA"];
+  const avg=arr=>arr.length?Math.round(arr.reduce((a,p)=>a+playerPower(p),0)/arr.length):0;
+  const all=S.starters;
+  return {
+    geral:avg(all),
+    def:avg(all.filter(p=>def.includes(p.pos))),
+    mid:avg(all.filter(p=>mid.includes(p.pos))),
+    atk:avg(all.filter(p=>atk.includes(p.pos)))
+  };
+}
+function campaignStats(){
+  const wins=S.history.filter(h=>h.res==='V').length;
+  const gf=S.history.reduce((a,h)=>a+(h.mg||0),0);
+  const ga=S.history.reduce((a,h)=>a+(h.og||0),0);
+  let art='—',artGols=0;
+  const sc=S.scorers||{};
+  Object.entries(sc).forEach(([n,g])=>{if(g>artGols && n!=='Brasil'){art=n;artGols=g;}});
+  if(art==='—' && S.starters.length){const a=S.starters.find(p=>['CA','PE','PD'].includes(p.pos));art=dispName((a||S.starters[0]).n);}
+  let craque='—',craqueSub='';
+  const ap=S.appearances||{};
+  const pool=Object.entries(ap);
+  if(pool.length){
+    const total=pool.reduce((a,[,v])=>a+v,0);
+    let r=Math.random()*total,sel=pool[pool.length-1][0];
+    for(const [n,v] of pool){r-=v;if(r<=0){sel=n;break;}}
+    craque=sel;
+    const pl=S.starters.concat(S.bench).find(p=>dispName(p.n)===sel);
+    craqueSub=pl?`Copa '${String(pl.y).slice(2)} · ${pl.o}`:'';
+  } else if(S.starters.length){
+    const best=[...S.starters].sort((a,b)=>b.o-a.o)[0];craque=dispName(best.n);craqueSub=`Copa '${String(best.y).slice(2)} · ${best.o}`;
+  }
+  return {wins,gf,ga,art,artGols,craque,craqueSub};
+}
+function generateCard(){
+  // garante que as fontes web estejam prontas antes de desenhar no canvas
+  if(document.fonts && document.fonts.ready){
+    document.fonts.load('900 70px Anton');document.fonts.load('800 30px Archivo');
+    document.fonts.ready.then(drawCard);
+  } else { drawCard(); }
+}
+function drawCard(){
+  const cv=$('#shareCanvas'),ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  // fundo
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0f9a5c');g.addColorStop(.5,'#075734');g.addColorStop(1,'#05130c');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha=.06;ctx.fillStyle='#fff';for(let x=0;x<W;x+=100)ctx.fillRect(x,0,4,H);ctx.globalAlpha=1;
+  const cx=v=>v, sh=(on)=>{ctx.shadowColor=on?'rgba(0,0,0,.55)':'transparent';ctx.shadowBlur=on?8:0;ctx.shadowOffsetY=on?2:0;};
+
+  // ---- HEADER ----
+  ctx.textAlign='center';sh(true);
+  ctx.fillStyle='#ffd24a';ctx.font='800 38px '+FB;
+  ctx.fillText(S.survival?'RUMO AO HEXA · SOBREVIVÊNCIA':(S.daily?'RUMO AO HEXA · DESAFIO DIÁRIO':'RUMO AO HEXA · MINHA SELEÇÃO'),W/2,86);
+  ctx.fillStyle='#fff';ctx.font='400 92px '+FA;
+  ctx.fillText('BRASIL ALL-STARS',W/2,178);
+  ctx.fillStyle='#ffd24a';ctx.font='800 34px '+FB;
+  ctx.fillText(`${S.formation} · ${S.ment.toUpperCase()}${S.daily?' · '+S.dailyDate:''}`,W/2,228);
+  sh(false);
+
+  // ---- FAIXA DE OVERALLS (geral + setores) ----
+  const ov=teamOveralls();
+  const ob=[['GERAL',ov.geral,'#fff'],['DEFESA',ov.def,'#ffd24a'],['MEIO',ov.mid,'#ffd24a'],['ATAQUE',ov.atk,'#ffd24a']];
+  const obW=(W-140-3*12)/4, obY=250, obH=70;
+  ob.forEach((c,i)=>{
+    const bx=70+i*(obW+12);
+    ctx.fillStyle='rgba(0,0,0,.32)';rr(ctx,bx,obY,obW,obH,12);ctx.fill();
+    ctx.strokeStyle='rgba(255,210,74,.45)';ctx.lineWidth=2;rr(ctx,bx,obY,obW,obH,12);ctx.stroke();
+    ctx.textAlign='center';ctx.fillStyle=c[2];ctx.font='400 38px '+FA;ctx.fillText(String(c[1]),bx+obW/2,obY+40);
+    ctx.fillStyle='#cfe8d8';ctx.font='800 16px '+FB;ctx.fillText(c[0],bx+obW/2,obY+60);
+  });
+
+  // ---- CAMPO ----
+  const fx=70,fy=346,fw=W-140,fh=860;
+  ctx.fillStyle='rgba(0,0,0,.30)';rr(ctx,fx,fy,fw,fh,28);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=4;
+  rr(ctx,fx+18,fy+18,fw-36,fh-36,18);ctx.stroke();
+  ctx.beginPath();ctx.arc(W/2,fy+fh/2,90,0,7);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(fx+18,fy+fh/2);ctx.lineTo(fx+fw-18,fy+fh/2);ctx.stroke();
+  // áreas
+  ctx.strokeRect(W/2-150,fy+18,300,90);ctx.strokeRect(W/2-150,fy+fh-108,300,90);
+
+  // organiza por linha conforme posição real
+  const order={GOL:0,ZAG:1,LD:1,LE:1,VOL:2,MC:2,MEI:2,MD:2,ME:2,PD:3,PE:3,CA:3};
+  const lines=[[],[],[],[]];
+  S.starters.forEach(p=>lines[order[p.pos]].push(p));
+  // ordena cada linha por "lado" para alas/pontas abrirem
+  const sideRank={LE:0,ME:0,PE:0,ZAG:1,VOL:1,MC:1,MEI:1,CA:1,GOL:1,LD:2,MD:2,PD:2};
+  lines.forEach(l=>l.sort((a,b)=>(sideRank[a.pos]??1)-(sideRank[b.pos]??1)));
+  // y de cada linha (gol embaixo, ataque em cima)
+  const rowY=[fy+fh-100, fy+fh-300, fy+fh-540, fy+150];
+  lines.forEach((row,ri)=>{
+    const y=rowY[ri],n=row.length||1;
+    row.forEach((p,i)=>{
+      const x=fx+70+(fw-140)*((i+1)/(n+1));
+      // camisa (círculo)
+      sh(true);
+      ctx.fillStyle='#ffd24a';ctx.beginPath();ctx.arc(x,y,38,0,7);ctx.fill();
+      sh(false);
+      ctx.fillStyle='#08130d';ctx.font='400 26px '+FA;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(POSABBR[p.pos],x,y+1);
+      ctx.textBaseline='alphabetic';
+      // nome com contorno para legibilidade
+      let nm=dispName(p.n);const maxChars=n>=4?9:n===3?11:14;nm=nm.length>maxChars?nm.slice(0,maxChars-1)+'…':nm;
+      ctx.font=(n>=4?'800 21px ':n===3?'800 23px ':'800 25px ')+FB;ctx.lineWidth=4;ctx.strokeStyle='rgba(0,0,0,.65)';
+      ctx.strokeText(nm,x,y+70);ctx.fillStyle='#fff';ctx.fillText(nm,x,y+70);
+      ctx.font='700 21px '+FB;ctx.fillStyle='#bff0d2';ctx.font=(n>=4?'700 16px ':n===3?'700 18px ':'700 20px ')+FB;
+      ctx.fillText(`Copa '${String(p.y).slice(2)} · ${p.o}`,x,y+94);
+    });
+  });
+
+  // ---- CAMPANHA ----
+  let cy=fy+fh+76;
+  ctx.textAlign='center';sh(true);
+  ctx.fillStyle='#ffd24a';ctx.font='400 48px '+FA;
+  ctx.fillText(S.survival?`🔥 ${survivalRank().toUpperCase()}`:(S.champ?'🏆 HEXACAMPEÃO!':'MINHA CAMPANHA'),W/2,cy);sh(false);
+  cy+=20;
+
+  // ---- DESTAQUES: craque, artilheiro, V / GP / GC ----
+  const st=campaignStats();
+  // duas "pílulas" lado a lado: CRAQUE e ARTILHEIRO
+  const boxW=(fw-20)/2, boxH=96;
+  const drawBox=(bx,label,val,sub)=>{
+    ctx.fillStyle='rgba(0,0,0,.30)';rr(ctx,bx,cy,boxW,boxH,14);ctx.fill();
+    ctx.strokeStyle='rgba(255,210,74,.5)';ctx.lineWidth=2;rr(ctx,bx,cy,boxW,boxH,14);ctx.stroke();
+    ctx.textAlign='center';
+    ctx.fillStyle='#ffd24a';ctx.font='800 22px '+FB;ctx.fillText(label,bx+boxW/2,cy+30);
+    ctx.fillStyle='#fff';ctx.font='400 34px '+FA;
+    let v=val.length>16?val.slice(0,15)+'…':val;ctx.fillText(v,bx+boxW/2,cy+66);
+    ctx.fillStyle='#bff0d2';ctx.font='700 18px '+FB;ctx.fillText(sub,bx+boxW/2,cy+88);
+  };
+  drawBox(fx, '⭐ CRAQUE', st.craque, st.craqueSub);
+  drawBox(fx+boxW+20, '👟 ARTILHEIRO', st.art, st.artGols+(st.artGols===1?' gol':' gols'));
+  cy+=boxH+18;
+  // linha V / GP / GC
+  const statH=78, third=(fw-40)/3;
+  const drawStat=(sx,big,small,color)=>{
+    ctx.fillStyle='rgba(255,255,255,.06)';rr(ctx,sx,cy,third,statH,12);ctx.fill();
+    ctx.textAlign='center';ctx.fillStyle=color;ctx.font='400 40px '+FA;ctx.fillText(big,sx+third/2,cy+44);
+    ctx.fillStyle='#cfe8d8';ctx.font='700 18px '+FB;ctx.fillText(small,sx+third/2,cy+68);
+  };
+  drawStat(fx, String(st.wins), 'VITÓRIAS', '#7bed9f');
+  drawStat(fx+third+20, String(st.gf), 'GOLS PRÓ', '#ffd24a');
+  drawStat(fx+2*(third+20), String(st.ga), 'GOLS SOFRIDOS', '#ff8a7d');
+  cy+=statH+10;
+  ctx.font='700 30px '+FB;
+  S.history.forEach(h=>{
+    cy+=52;
+    const col=h.res==='V'?'#7bed9f':h.res==='D'?'#ff8a7d':'#ffd24a';
+    // linha com fundo sutil
+    ctx.fillStyle='rgba(255,255,255,.06)';rr(ctx,fx,cy-36,fw,44,10);ctx.fill();
+    ctx.textAlign='left';ctx.fillStyle='#fff';ctx.fillText(`${h.flag} ${h.round}`,fx+24,cy-4);
+    ctx.textAlign='right';ctx.fillStyle=col;ctx.fillText(`${h.opp}   ${h.mg} x ${h.og}${h.pen||''}`,fx+fw-24,cy-4);
+  });
+
+  // ---- RODAPÉ: legenda + link ----
+  cy+=86;
+  ctx.textAlign='center';sh(true);
+  ctx.fillStyle='#fff';ctx.font='800 34px '+FB;
+  ctx.fillText(SHARE_CAPTION,W/2,Math.min(cy,H-96));
+  cy+=58;
+  // pílula do link
+  const linkTxt='⚽ '+SITE_URL;ctx.font='400 46px '+FA;
+  const tw=ctx.measureText(linkTxt).width;
+  const pillW=tw+64,pillH=72,px=(W-pillW)/2,py=Math.min(cy,H-96)-52;
+  ctx.fillStyle='#ffd24a';rr(ctx,px,py,pillW,pillH,36);ctx.fill();
+  sh(false);
+  ctx.fillStyle='#08130d';ctx.fillText(linkTxt,W/2,py+50);
+
+  cv.style.display='block';
+  cv.scrollIntoView({behavior:'smooth',block:'center'});
+  shareCard();
+}
+
+// converte o canvas em arquivo e abre o menu nativo de compartilhamento
+async function shareCard(){
+  const cv=$('#shareCanvas');
+  const shareText=`${SHARE_CAPTION} https://${SITE_URL}`;
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  const file=new File([blob],'minha-selecao-rumo-ao-hexa.png',{type:'image/png'});
+  const genBtn=$('#genBtn');
+  // tenta compartilhamento nativo com a imagem (celular)
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{
+      await navigator.share({files:[file],text:shareText});
+      genBtn.textContent='✅ Compartilhado! Gerar de novo';
+      return;
+    }catch(e){ /* usuário cancelou — segue para fallback */ }
+  }
+  // fallback (desktop ou navegador sem suporte): download + copiar link
+  const url=URL.createObjectURL(blob);
+  const a=$('#dlLink');a.href=url;a.download='minha-selecao-rumo-ao-hexa.png';a.style.display='block';
+  try{await navigator.clipboard.writeText(shareText);}catch(e){}
+  genBtn.textContent='✅ Imagem pronta — baixe abaixo (link copiado)';
+}
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+try{refreshRecordLine();}catch(e){}
+</script>
+</body>
+</html>

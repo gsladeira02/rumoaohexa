@@ -156,6 +156,8 @@ h1 .em{color:var(--gold);display:block}
 .reward-card:active{transform:scale(.98)}
 .reward-card .t{font-family:'Anton';font-size:18px;color:var(--gold);letter-spacing:.4px}
 .reward-card .d{font-size:11px;opacity:.72;line-height:1.35}
+.reward-card.player-pick{min-height:78px}
+.reward-card.player-pick .d{opacity:.85}
 .status-note{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.22);font-size:11.5px;line-height:1.45;opacity:.9}
 .status-note b{color:var(--gold)}
 @media (max-width:420px){.reward-grid{grid-template-columns:1fr}.surv-stats{grid-template-columns:1fr 1fr 1fr}}
@@ -513,7 +515,7 @@ function weight(o){return Math.pow(0.9,(o-75));}
 function sanitizePlayersDB(){
   const remove={
     ZAG:['Casemiro','Dunga'],
-    VOL:['Lúcio','Thiago Silva','Aldair'],
+    VOL:['Lúcio','Thiago Silva','Aldair','Everton Ribeiro'],
     MEI:['Roberto Carlos','Marcelo'],
     PD:['Daniel Alves','Cafu','Maicon'],
     PE:['Marcelo'],
@@ -528,6 +530,9 @@ function sanitizePlayersDB(){
   casemiros.forEach(p=>{
     if(!PLAYERS_DB.MC.some(x=>x.n===p.n&&x.y===p.y))PLAYERS_DB.MC.push({...p,o:Math.max(80,p.o-1)});
   });
+  // Everton Ribeiro não é volante no draft; entra como meia de criação.
+  PLAYERS_DB.MEI=PLAYERS_DB.MEI||[];
+  if(!PLAYERS_DB.MEI.some(x=>x.n==='Everton Ribeiro'&&x.y===2022))PLAYERS_DB.MEI.push({n:'Everton Ribeiro',y:2022,o:81});
 }
 sanitizePlayersDB();
 
@@ -544,7 +549,8 @@ const POSITION_LOCKS={
   "Thiago Silva":{default:["ZAG"]},
   "Aldair":{default:["ZAG"]},
   "Cafu":{default:["LD"]},
-  "Maicon":{default:["LD"]}
+  "Maicon":{default:["LD"]},
+  "Everton Ribeiro":{default:["MEI","MC"]}
 };
 const RATING_OVERRIDES={
   // Lendas continuam especiais, mas sem abrir vantagem exagerada no simulador.
@@ -721,17 +727,19 @@ function buildAvailableLineup(){
   S.lastLineupNotes=notes;S.missedThisMatch=unavailable;
   return active;
 }
-const YELLOW_RATE={GOL:.02,ZAG:.18,VOL:.16,LD:.12,LE:.12,MC:.10,MEI:.08,MD:.08,ME:.08,PD:.06,PE:.06,CA:.07};
-const RED_RATE={GOL:.002,ZAG:.025,VOL:.020,LD:.015,LE:.015,MC:.010,MEI:.007,MD:.007,ME:.007,PD:.006,PE:.006,CA:.007};
-const CARD_PROFILE={"Dunga":1.40,"Felipe Melo":1.60,"Mauro Silva":1.30,"Casemiro":1.35,"Luiz Gustavo":1.20,"Batista":1.20,"Zito":1.15,"Clodoaldo":1.15,"Pelé":0.70,"Zico":0.75,"Kaká":0.70,"Ronaldinho Gaúcho":0.75,"Rivaldo":0.80,"Sócrates":0.82,"Didi":0.80};
-function cardMentalityMult(){return S.ment==='defensivo'?1.18:(S.ment==='ofensivo'?0.90:1);}
+// Cartões calibrados para gerar risco no Sobrevivência sem travar a campanha.
+// ZAG/VOL continuam mais expostos, mas a média cai para algo perto de 0,5–0,8 amarelo por jogo.
+const YELLOW_RATE={GOL:.006,ZAG:.105,VOL:.095,LD:.070,LE:.070,MC:.055,MEI:.042,MD:.045,ME:.045,PD:.034,PE:.034,CA:.040};
+const RED_RATE={GOL:.0005,ZAG:.008,VOL:.007,LD:.004,LE:.004,MC:.003,MEI:.002,MD:.002,ME:.002,PD:.0015,PE:.0015,CA:.002};
+const CARD_PROFILE={"Dunga":1.22,"Felipe Melo":1.35,"Mauro Silva":1.18,"Casemiro":1.20,"Luiz Gustavo":1.12,"Batista":1.12,"Zito":1.08,"Clodoaldo":1.08,"Pelé":0.65,"Zico":0.70,"Kaká":0.65,"Ronaldinho Gaúcho":0.70,"Rivaldo":0.76,"Sócrates":0.78,"Didi":0.76};
+function cardMentalityMult(){return S.ment==='defensivo'?1.08:(S.ment==='ofensivo'?0.92:1);}
 function processCards(active){
   if(!S.survival)return [];
   const events=[];let redGiven=false;
   active.forEach(p=>{
-    const prof=CARD_PROFILE[p.n]||1;const posMult=(p.pos==='ZAG'||p.pos==='VOL')&&S.ment==='defensivo'?1.12:1;
+    const prof=CARD_PROFILE[p.n]||1;const posMult=(p.pos==='ZAG'||p.pos==='VOL')&&S.ment==='defensivo'?1.05:1;
     const yRate=(YELLOW_RATE[p.pos]||.08)*prof*cardMentalityMult()*posMult;
-    const rRate=(RED_RATE[p.pos]||.008)*prof*(S.ment==='defensivo'?1.12:1);
+    const rRate=(RED_RATE[p.pos]||.003)*prof*(S.ment==='defensivo'?1.05:1);
     const st=stOf(p);
     if(!redGiven && Math.random()<rRate){st.susp=Math.max(st.susp||0,1);st.y=0;redGiven=true;events.push(`🟥 ${dispName(p.n)} foi expulso e está suspenso por 1 jogo.`);return;}
     if(Math.random()<yRate){st.y=(st.y||0)+1;events.push(`🟨 ${dispName(p.n)} recebeu amarelo${st.y>=2?' e está suspenso pelo acúmulo.':''}`);if(st.y>=2){st.y=0;st.susp=Math.max(st.susp||0,1);}}
@@ -1004,7 +1012,7 @@ function showSurvivalReward(next){
     ['gol','+1 Goleiro','Melhora goleiro e pênaltis.'],
     ['all','+1 Geral','Pequeno ganho em todos os setores.'],
     ['med','🩺 Departamento Médico','Recupera 1 jogador lesionado ou limpa 1 suspensão.'],
-    ['reroll','+1 Reroll','Fica guardado para uma futura expansão de draft.']
+    ['reroll','🎲 Reroll de Jogador','Escolha 1 atleta do elenco e troque por nova opção da mesma posição.']
   ];
   const grid=$('#rewardGrid');grid.innerHTML='';
   rewards.forEach(([id,t,d])=>{
@@ -1022,9 +1030,47 @@ function applySurvivalReward(id){
   else if(id==='gol')S.survivalBuffs.gol+=1;
   else if(id==='all'){S.survivalBuffs.atk++;S.survivalBuffs.mid++;S.survivalBuffs.def++;S.survivalBuffs.gol++;}
   else if(id==='med'){const msg=applyMedicalDepartment();S.survivalLog=S.survivalLog||[];S.survivalLog.push(msg);}
-  else if(id==='reroll')S.rerollsLeft=(S.rerollsLeft||0)+1;
+  else if(id==='reroll'){showSurvivalRerollPicker();return;}
+  continueAfterSurvivalReward();
+}
+function continueAfterSurvivalReward(){
   const next=S.afterReward;S.afterReward=null;
-  if(typeof next==='function')next();
+  if(typeof next==='function'){next();return;}
+  // fallback defensivo para nunca deixar a tela de recompensa travada
+  if(S.phase==='group'){ if(S.gIndex>=S.groupOpp.length-1)showStandings(); else {S.gIndex++;loadMatch();} }
+  else if(S.phase==='ko'){ if(S.koIndex>=S.koOpp.length-1)survivalCupWon(S.koOpp[S.koIndex]||{}); else {S.koIndex++;loadMatch();} }
+  else loadMatch();
+}
+function showSurvivalRerollPicker(){
+  $('#survivalRewardText').textContent='Escolha o jogador que será substituído. O novo atleta virá da mesma posição.';
+  const grid=$('#rewardGrid');grid.innerHTML='';
+  const roster=[...S.starters.map((p,i)=>({...p,_list:'starters',_idx:i,_role:'Titular'})),...S.bench.map((p,i)=>({...p,_list:'bench',_idx:i,_role:'Reserva'}))];
+  roster.forEach(p=>{
+    const card=document.createElement('div');card.className='reward-card player-pick';
+    card.innerHTML=`<div class="t">${dispName(p.n)}</div><div class="d">${p._role} · ${POSABBR[p.pos]} · Copa ${p.y} · ${p.o}</div>`;
+    card.onclick=()=>showSurvivalRerollOptions(p);grid.appendChild(card);
+  });
+}
+function showSurvivalRerollOptions(oldP){
+  $('#survivalRewardText').textContent=`Trocar ${dispName(oldP.n)} (${POSABBR[oldP.pos]}). Escolha o substituto.`;
+  const grid=$('#rewardGrid');grid.innerHTML='';
+  let opts=drawOptions(oldP.pos,4).filter(p=>p.n!==oldP.n);
+  if(!opts.length)opts=poolFor(oldP.pos).filter(p=>p.n!==oldP.n).slice(0,4);
+  opts.forEach(p=>{
+    const card=document.createElement('div');card.className='reward-card player-pick';
+    card.innerHTML=`<div class="t">${dispName(p.n)}</div><div class="d">${POSABBR[oldP.pos]} · Copa ${p.y} · ${p.o}</div>`;
+    card.onclick=()=>applySurvivalPlayerReroll(oldP,p);grid.appendChild(card);
+  });
+  const back=document.createElement('div');back.className='reward-card player-pick';
+  back.innerHTML='<div class="t">Voltar</div><div class="d">Escolher outro jogador do elenco.</div>';
+  back.onclick=showSurvivalRerollPicker;grid.appendChild(back);
+}
+function applySurvivalPlayerReroll(oldP,newP){
+  const entry={...newP,pos:oldP.pos,c:'🇧🇷'};
+  if(oldP._list==='starters')S.starters[oldP._idx]=entry;else S.bench[oldP._idx]=entry;
+  if(S.status){delete S.status[pkey(oldP)];delete S.status[pkey(entry)];}
+  S.survivalLog=S.survivalLog||[];S.survivalLog.push(`${dispName(oldP.n)} saiu no reroll; entrou ${dispName(entry.n)}.`);
+  continueAfterSurvivalReward();
 }
 function survivalCupWon(o){
   S.survivalTitles=(S.survivalTitles||0)+1;

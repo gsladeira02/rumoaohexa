@@ -144,6 +144,22 @@ h1 .em{color:var(--gold);display:block}
 .review-bench-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
 @media (max-width:420px){.review-field{min-height:430px}.review-dot{width:32px;height:32px;font-size:11px}.review-nm{font-size:9px;max-width:72px}.review-row{gap:2px}.review-bench-grid{grid-template-columns:1fr}}
 
+
+/* ===== MODO SOBREVIVÊNCIA ===== */
+.surv-panel{margin-top:16px;background:rgba(0,0,0,.28);border:1px solid var(--line);border-radius:16px;padding:14px}
+.surv-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.surv-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:10px 6px;text-align:center}
+.surv-stat .v{font-family:'Anton';font-size:24px;color:var(--gold);line-height:1}
+.surv-stat .l{font-size:9px;font-weight:900;letter-spacing:.8px;opacity:.65;margin-top:4px;text-transform:uppercase}
+.reward-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.reward-card{border:2px solid var(--line);border-radius:14px;padding:14px;background:rgba(0,0,0,.25);cursor:pointer;min-height:92px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.reward-card:active{transform:scale(.98)}
+.reward-card .t{font-family:'Anton';font-size:18px;color:var(--gold);letter-spacing:.4px}
+.reward-card .d{font-size:11px;opacity:.72;line-height:1.35}
+.status-note{margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.22);font-size:11.5px;line-height:1.45;opacity:.9}
+.status-note b{color:var(--gold)}
+@media (max-width:420px){.reward-grid{grid-template-columns:1fr}.surv-stats{grid-template-columns:1fr 1fr 1fr}}
+
 /* ===== AJUSTES RESPONSIVOS (telas estreitas) ===== */
 @media (max-width:540px){
   #app{padding:14px 12px 96px}
@@ -195,6 +211,7 @@ img,canvas{max-width:100%}
     <div class="bench-btn" style="margin-top:0">
       <button class="btn" onclick="startSetup(false)">🏆 Modo Carreira</button>
       <button class="btn ghost" onclick="startDaily()">📅 Desafio Diário</button>
+      <button class="btn ghost" onclick="startSurvivalSetup()">🔥 Modo Sobrevivência</button>
     </div>
     <p class="muted" id="recordLine">504 convocados · 9 posições · 7 esquemas</p>
   </section>
@@ -254,6 +271,21 @@ img,canvas{max-width:100%}
       <div class="review-bench" id="reviewBench"></div>
     </div>
     <div class="bench-btn"><button class="btn" onclick="confirmTournament()">Começar a Copa</button></div>
+  </section>
+
+
+  <section class="screen" id="survivalReward">
+    <div class="topbar"><span class="progress">MODO SOBREVIVÊNCIA</span><span class="formation-tag" id="survivalStage"></span></div>
+    <h1 class="scr-title">Escolha<span class="em"> sua recompensa</span></h1>
+    <p class="sub" id="survivalRewardText">Vitória conquistada. Escolha um upgrade para continuar a sequência.</p>
+    <div class="surv-panel">
+      <div class="surv-stats">
+        <div class="surv-stat"><div class="v" id="survCups">1</div><div class="l">Copa atual</div></div>
+        <div class="surv-stat"><div class="v" id="survTitles">0</div><div class="l">Títulos</div></div>
+        <div class="surv-stat"><div class="v" id="survWins">0</div><div class="l">Vitórias</div></div>
+      </div>
+      <div class="reward-grid" id="rewardGrid"></div>
+    </div>
   </section>
 
   <section class="screen" id="match">
@@ -373,7 +405,9 @@ function knockoutUpsetMod(oppStr){
 }
 
 let S={formation:"4-4-2",ment:"equilibrado",diff:"classico",starters:[],bench:[],pickPlan:[],pickIndex:0,
-       phase:"group",gIndex:0,koIndex:0,table:[],history:[],groupOpp:[],koOpp:[],daily:false};
+       phase:"group",gIndex:0,koIndex:0,table:[],history:[],groupOpp:[],koOpp:[],daily:false,
+       survival:false,survivalRun:false,survivalCup:1,survivalTitles:0,survivalWins:0,survivalBuffs:{atk:0,mid:0,def:0,gol:0},afterReward:null,
+       status:{},lastLineupNotes:[]};
 
 const $=s=>document.querySelector(s);
 // nome amigável para exibição (remove desambiguações internas)
@@ -383,7 +417,7 @@ const shuffle=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1])
 const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 
 function startSetup(daily){
-  S.daily=false;S.groupOpp=[];S.koOpp=[];
+  S.daily=false;S.survival=false;S.survivalRun=false;S.groupOpp=[];S.koOpp=[];
   const fo=$('#formOpts');fo.innerHTML='';
   Object.keys(FORMATIONS).forEach((k,i)=>{
     const d=document.createElement('div');d.className='opt'+(i===0?' sel':'');d.dataset.form=k;
@@ -395,6 +429,13 @@ function startSetup(daily){
   bindSel('[data-ment]','ment','ment');bindSel('[data-diff]','diff','diff');
   show('setup');
 }
+function startSurvivalSetup(){
+  startSetup(false);
+  S.survival=true;
+  const k=$('#setup .kicker'); if(k)k.textContent='Sobrevivência';
+  const title=$('#setup .scr-title'); if(title)title.innerHTML='Modo<span class="em"> sobrevivência</span>';
+  const btn=$('#setup .bench-btn .btn'); if(btn)btn.textContent='Começar Sobrevivência';
+}
 function bindSel(sel,stateKey,dataKey){document.querySelectorAll(sel).forEach(d=>{d.onclick=()=>{document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));d.classList.add('sel');S[stateKey]=d.dataset[dataKey];};});}
 
 /* ---------- DESAFIO DIÁRIO ---------- */
@@ -403,6 +444,7 @@ function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function seedFromString(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
 function startDaily(){
+  S.survival=false;S.survivalRun=false;
   S.daily=true;S.dailyDate=todayKey();
   const rng=mulberry32(seedFromString('hexa-'+S.dailyDate));
   const pick=(arr)=>arr[Math.floor(rng()*arr.length)];
@@ -463,17 +505,46 @@ function refreshRecordLine(){
 function startDraft(){
   S.daily=false;S.starters=[];S.bench=[];S.pickIndex=0;S.rerollsLeft=2;
   S.pickPlan=[...FORMATIONS[S.formation].map(p=>({p,type:'starter'})),...BENCH.map(p=>({p,type:'bench'}))];
-  $('#formTag').textContent=S.formation+' · '+S.ment;
+  $('#formTag').textContent=(S.survival?'Sobrevivência · ':'')+S.formation+' · '+S.ment;
   show('draft');renderDraft();
 }
 function weight(o){return Math.pow(0.9,(o-75));}
+// saneamento do banco: remove multifunções forçadas que quebravam o draft
+function sanitizePlayersDB(){
+  const remove={
+    ZAG:['Casemiro','Dunga'],
+    VOL:['Lúcio','Thiago Silva','Aldair'],
+    MEI:['Roberto Carlos','Marcelo'],
+    PD:['Daniel Alves','Cafu','Maicon'],
+    PE:['Marcelo'],
+    CA:['Rivaldo','Kaká','Robinho','Vinícius Júnior','Zico','Sócrates','Neymar','Jairzinho','Rodrygo','Gabriel Martinelli']
+  };
+  Object.entries(remove).forEach(([pos,names])=>{
+    PLAYERS_DB[pos]=(PLAYERS_DB[pos]||[]).filter(p=>!names.includes(p.n));
+  });
+  // Casemiro pode aparecer como VOL e MC, mas nunca como ZAG.
+  const casemiros=(PLAYERS_DB.VOL||[]).filter(p=>p.n==='Casemiro');
+  PLAYERS_DB.MC=PLAYERS_DB.MC||[];
+  casemiros.forEach(p=>{
+    if(!PLAYERS_DB.MC.some(x=>x.n===p.n&&x.y===p.y))PLAYERS_DB.MC.push({...p,o:Math.max(80,p.o-1)});
+  });
+}
+sanitizePlayersDB();
+
 // posição primária de cada jogador (primeira entrada no banco = posição de origem)
 const PRIMARY_POS=(()=>{const m={};Object.entries(PLAYERS_DB).forEach(([pos,players])=>{players.forEach(p=>{const k=p.n+'|'+p.y;if(!m[k])m[k]=pos;});});return m;})();
 // Ajustes finos de posição e overall para evitar multiposições irreais/discrepâncias grandes.
 const POSITION_LOCKS={
   "Roberto Carlos":{default:["LE"]},
   "Marcelo":{default:["LE"]},
-  "Daniel Alves":{default:["LD"],2010:["LD","MEI"]}
+  "Daniel Alves":{default:["LD"],2010:["LD","MEI"]},
+  "Casemiro":{default:["VOL","MC"]},
+  "Dunga":{default:["VOL"]},
+  "Lúcio":{default:["ZAG"]},
+  "Thiago Silva":{default:["ZAG"]},
+  "Aldair":{default:["ZAG"]},
+  "Cafu":{default:["LD"]},
+  "Maicon":{default:["LD"]}
 };
 const RATING_OVERRIDES={
   // Lendas continuam especiais, mas sem abrir vantagem exagerada no simulador.
@@ -619,8 +690,79 @@ function srow(p,cls){
   return r;
 }
 
+function survivalDifficultyBonus(){return S.survival?Math.min(10,(S.survivalCup-1)*3):0;}
+function buffForPos(pos){
+  if(!S.survival||!S.survivalBuffs)return 0;
+  if(pos==='GOL')return S.survivalBuffs.gol||0;
+  if(['ZAG','LD','LE'].includes(pos))return S.survivalBuffs.def||0;
+  if(['VOL','MC','MEI','MD','ME'].includes(pos))return S.survivalBuffs.mid||0;
+  if(['PD','PE','CA'].includes(pos))return S.survivalBuffs.atk||0;
+  return 0;
+}
+function playerPower(p){return p.o+buffForPos(p.pos);}
+function pkey(p){return `${p.n}|${p.y}`;}
+function ensureStatus(){if(!S.status)S.status={};}
+function stOf(p){ensureStatus();const k=pkey(p);if(!S.status[k])S.status[k]={y:0,susp:0,inj:0,reason:''};return S.status[k];}
+function isUnavailable(p){const st=stOf(p);return (st.susp||0)>0||(st.inj||0)>0;}
+function unavailableText(p){const st=stOf(p);if((st.susp||0)>0)return `suspenso (${st.susp} jogo${st.susp>1?'s':''})`;if((st.inj||0)>0)return `${st.reason||'contundido'} (${st.inj} jogo${st.inj>1?'s':''})`;return '';}
+function tickMissedAbsences(players){players.forEach(p=>{const st=stOf(p);if((st.susp||0)>0)st.susp--;if((st.inj||0)>0)st.inj--;if((st.inj||0)<=0)st.reason='';});}
+function buildAvailableLineup(){
+  const used=new Set();const notes=[];const unavailable=[];
+  const availableBench=()=>S.bench.filter(p=>!used.has(pkey(p))&&!isUnavailable(p));
+  const active=S.starters.map(st=>{
+    if(!isUnavailable(st)){used.add(pkey(st));return st;}
+    unavailable.push(st);
+    let rep=availableBench().find(b=>b.pos===st.pos);
+    if(rep){used.add(pkey(rep));notes.push(`${dispName(st.n)} fora (${unavailableText(st)}); entrou ${dispName(rep.n)}.`);return rep;}
+    rep=availableBench()[0];
+    if(rep){used.add(pkey(rep));notes.push(`${dispName(st.n)} fora (${unavailableText(st)}); ${dispName(rep.n)} improvisado em ${POSABBR[st.pos]}.`);return {...rep,pos:st.pos,o:Math.max(70,rep.o-5),impro:true};}
+    notes.push(`${dispName(st.n)} fora (${unavailableText(st)}) e sem substituto disponível.`);return {...st,o:Math.max(65,st.o-10),forced:true};
+  });
+  S.lastLineupNotes=notes;S.missedThisMatch=unavailable;
+  return active;
+}
+const YELLOW_RATE={GOL:.02,ZAG:.18,VOL:.16,LD:.12,LE:.12,MC:.10,MEI:.08,MD:.08,ME:.08,PD:.06,PE:.06,CA:.07};
+const RED_RATE={GOL:.002,ZAG:.025,VOL:.020,LD:.015,LE:.015,MC:.010,MEI:.007,MD:.007,ME:.007,PD:.006,PE:.006,CA:.007};
+const CARD_PROFILE={"Dunga":1.40,"Felipe Melo":1.60,"Mauro Silva":1.30,"Casemiro":1.35,"Luiz Gustavo":1.20,"Batista":1.20,"Zito":1.15,"Clodoaldo":1.15,"Pelé":0.70,"Zico":0.75,"Kaká":0.70,"Ronaldinho Gaúcho":0.75,"Rivaldo":0.80,"Sócrates":0.82,"Didi":0.80};
+function cardMentalityMult(){return S.ment==='defensivo'?1.18:(S.ment==='ofensivo'?0.90:1);}
+function processCards(active){
+  if(!S.survival)return [];
+  const events=[];let redGiven=false;
+  active.forEach(p=>{
+    const prof=CARD_PROFILE[p.n]||1;const posMult=(p.pos==='ZAG'||p.pos==='VOL')&&S.ment==='defensivo'?1.12:1;
+    const yRate=(YELLOW_RATE[p.pos]||.08)*prof*cardMentalityMult()*posMult;
+    const rRate=(RED_RATE[p.pos]||.008)*prof*(S.ment==='defensivo'?1.12:1);
+    const st=stOf(p);
+    if(!redGiven && Math.random()<rRate){st.susp=Math.max(st.susp||0,1);st.y=0;redGiven=true;events.push(`🟥 ${dispName(p.n)} foi expulso e está suspenso por 1 jogo.`);return;}
+    if(Math.random()<yRate){st.y=(st.y||0)+1;events.push(`🟨 ${dispName(p.n)} recebeu amarelo${st.y>=2?' e está suspenso pelo acúmulo.':''}`);if(st.y>=2){st.y=0;st.susp=Math.max(st.susp||0,1);}}
+  });
+  return events;
+}
+function processInjury(active){
+  if(!S.survival)return [];
+  // chance por PARTIDA, não por jogador: dá tensão sem destruir o elenco.
+  if(Math.random()>0.12)return [];
+  const pool=active.filter(p=>p.pos!=='GOL'||Math.random()<0.35);
+  if(!pool.length)return [];
+  const p=shuffle(pool)[0];const st=stOf(p);const severe=Math.random()<0.20;
+  st.inj=Math.max(st.inj||0,severe?2:1);st.reason=severe?'lesão grave':'contusão leve';
+  return [`🩹 ${dispName(p.n)} sofreu ${st.reason} e ficará fora por ${st.inj} jogo${st.inj>1?'s':''}.`];
+}
+function statusSummary(){
+  ensureStatus();const all=[...S.starters,...S.bench];
+  const out=all.filter(p=>isUnavailable(p)).map(p=>`${dispName(p.n)}: ${unavailableText(p)}`);
+  const warned=all.filter(p=>(stOf(p).y||0)===1&&!isUnavailable(p)).map(p=>`${dispName(p.n)} pendurado`);
+  return {out,warned};
+}
+function medicalTargets(){ensureStatus();return [...S.starters,...S.bench].filter(p=>isUnavailable(p));}
+function applyMedicalDepartment(){
+  const targets=medicalTargets().sort((a,b)=>((stOf(b).inj||0)+(stOf(b).susp||0))-((stOf(a).inj||0)+(stOf(a).susp||0)));
+  if(!targets.length)return 'Departamento Médico acionado, mas não havia desfalques no momento.';
+  const p=targets[0],st=stOf(p),txt=`${dispName(p.n)} recuperado/liberado pelo Departamento Médico.`;
+  st.susp=0;st.inj=0;st.reason='';return txt;
+}
 function teamRating(active){
-  const avg=active.reduce((a,p)=>a+p.o,0)/active.length;
+  const avg=active.reduce((a,p)=>a+playerPower(p),0)/active.length;
   return avg+5; // bônus menor: mantém o Brasil forte sem deixar o simulador fácil demais
 }
 function pickNations(){
@@ -658,15 +800,23 @@ function showLineupReview(){
 }
 function confirmTournament(){startTournament();}
 function startTournament(){
-  S.phase="group";S.gIndex=0;S.koIndex=0;S.history=[];S.scorers={};S.appearances={};
-  if(!S.groupOpp.length)pickNations();
+  if(S.survival && !S.survivalRun){
+    S.survivalRun=true;S.survivalCup=1;S.survivalTitles=0;S.survivalWins=0;
+    S.survivalBuffs={atk:0,mid:0,def:0,gol:0};S.survivalLog=[];S.status={};S.lastLineupNotes=[];
+  }
+  S.phase="group";S.gIndex=0;S.koIndex=0;
+  if(!S.survival){S.history=[];S.scorers={};S.appearances={};}
+  else{S.scorers=S.scorers||{};S.appearances=S.appearances||{};}
+  pickNations();
   S.table=[{n:"BRASIL",yr:"Lendas",pts:0,gf:0,ga:0},...S.groupOpp.map(g=>({n:g.n,yr:g.y,pts:0,gf:0,ga:0}))];
-  $('#matchForm').textContent=S.formation+' · '+S.ment;
+  $('#matchForm').textContent=(S.survival?`Sobrevivência · Copa ${S.survivalCup}`:S.formation+' · '+S.ment);
   show('match');loadMatch();
 }
 function curOpponent(){
-  if(S.phase==="group")return{...S.groupOpp[S.gIndex],round:`Fase de Grupos · Jogo ${S.gIndex+1}`};
-  return {...S.koOpp[S.koIndex],round:KO_ROUNDS[S.koIndex]};
+  const boost=survivalDifficultyBonus();
+  const tune=o=>({...o,baseStr:o.str,str:Math.min(96,o.str+boost)});
+  if(S.phase==="group")return{...tune(S.groupOpp[S.gIndex]),round:`Fase de Grupos · Jogo ${S.gIndex+1}`};
+  return {...tune(S.koOpp[S.koIndex]),round:KO_ROUNDS[S.koIndex]};
 }
 function loadMatch(){
   const o=curOpponent();
@@ -675,6 +825,7 @@ function loadMatch(){
   $('#roundName').textContent=`${o.round} · vs ${o.n} ${o.y}`;
   $('#oppFlag').textContent=o.c;$('#oppName').textContent=o.n;$('#oppYear').textContent=o.y;
   $('#scoreNum').textContent='0 - 0';$('#scorers').innerHTML='';$('#subNote').textContent='';$('#matchResult').innerHTML='';
+  if(S.survival){const ss=statusSummary();const bits=[];if(ss.out.length)bits.push('<b>Desfalques:</b> '+ss.out.join(' · '));if(ss.warned.length)bits.push('<b>Pendurados:</b> '+ss.warned.join(' · '));if(bits.length)$('#matchResult').innerHTML='<div class="status-note">'+bits.join('<br>')+'</div>';}
   const b=$('#matchBtn');b.disabled=false;b.textContent='Jogar partida';b.onclick=playMatch;
 }
 function renderOvrBar(){
@@ -687,8 +838,9 @@ function renderOvrBar(){
 }
 function playMatch(){
   const o=curOpponent();
-  let active=[...S.starters];const subs=[];
-  const benchPool=shuffle([...S.bench]);
+  let active=buildAvailableLineup();const subs=[];
+  const usedActive=new Set(active.map(p=>pkey(p)));
+  const benchPool=shuffle([...S.bench].filter(p=>!isUnavailable(p)&&!usedActive.has(pkey(p))));
   const nSubs=rnd(0,Math.min(3,benchPool.length));
   for(let i=0;i<nSubs;i++){
     const inP=benchPool[i];const names=new Set(active.map(p=>p.n));
@@ -704,7 +856,7 @@ function playMatch(){
   const opp=o.str,m=MENT[S.ment];
   // overalls setoriais do time EM CAMPO (com subs aplicadas)
   const defPos=["GOL","ZAG","LD","LE"],atkPos=["PD","PE","CA"];
-  const avgOf=arr=>arr.length?arr.reduce((a,p)=>a+p.o,0)/arr.length:80;
+  const avgOf=arr=>arr.length?arr.reduce((a,p)=>a+playerPower(p),0)/arr.length:80;
   const defR=avgOf(active.filter(p=>defPos.includes(p.pos)))+5;   // bônus menor para equilíbrio
   const atkR=avgOf(active.filter(p=>atkPos.includes(p.pos)))+5;
   const myR=teamRating(active);                                    // força geral (p/ pênaltis etc.)
@@ -741,14 +893,21 @@ function playMatch(){
   // animação leve: placar sobe em ~0.5s
   animateScore(mg,og);
   $('#scorers').innerHTML=sc.map(e=>`<div class="sc"><span class="mn">${e.mn}'</span><span>⚽ ${e.me?e.txt:o.n}</span></div>`).join('');
-  $('#subNote').textContent=subs.length?('Substituições: '+subs.map(s=>`${dispName(s.out.n)} ⇄ ${dispName(s.inP.n)} (${s.mn}')`).join(' · ')):'Sem substituições nesta partida.';
+  let notes=[];
+  if(S.lastLineupNotes&&S.lastLineupNotes.length)notes=notes.concat(S.lastLineupNotes);
+  notes.push(subs.length?('Substituições: '+subs.map(s=>`${dispName(s.out.n)} ⇄ ${dispName(s.inP.n)} (${s.mn}')`).join(' · ')):'Sem substituições nesta partida.');
+  const cardEvents=processCards(active);
+  const injuryEvents=processInjury(active);
+  if(S.missedThisMatch)tickMissedAbsences(S.missedThisMatch);
+  notes=notes.concat(cardEvents,injuryEvents);
+  $('#subNote').innerHTML=notes.join('<br>');
   finishMatch(mg,og,o,pen);
 }
 // disputa de pênaltis: melhor de 5 + morte súbita. Vantagem leve ao maior overall
 // e bônus de defesa conforme o goleiro em campo.
 function simPenalties(active,o){
   const gk=active.find(p=>p.pos==='GOL');
-  const gkRating=gk?gk.o:80;
+  const gkRating=gk?playerPower(gk):80;
   const myTeam=teamRating(active);
   const koMod=knockoutUpsetMod(o.str);
   // probabilidade de converter cada cobrança; contra zebras, o Brasil tem vantagem mental/técnica maior
@@ -799,20 +958,90 @@ function finishMatch(mg,og,o,pen){
   const bannerCls=drew?'draw':(won?'win':'lose');
   const verb = (S.phase==="ko"&&penStr) ? (won?'Vitória nos pênaltis':'Derrota nos pênaltis') : (won?'Vitória':drew?'Empate':'Derrota');
   res.innerHTML=`<div class="result-banner ${bannerCls}">${verb} ${mg} a ${og}${penStr}</div>`;
-  S.history.push({round:S.phase==="group"?`Grupos J${S.gIndex+1}`:o.round,opp:`${o.n} ${o.y}`,flag:o.c,mg,og,pen:penStr,res:won?'V':drew?'E':'D'});
+  S.history.push({round:S.phase==="group"?`Copa ${S.survivalCup||1} · Grupos J${S.gIndex+1}`:S.survival?`Copa ${S.survivalCup} · ${o.round}`:o.round,opp:`${o.n} ${o.y}`,flag:o.c,mg,og,pen:penStr,res:won?'V':drew?'E':'D'});
+  if(won && S.survival)S.survivalWins=(S.survivalWins||0)+1;
+  const rewardGate=(next)=>{
+    if(won && S.survival){b.textContent='Escolher recompensa';b.onclick=()=>showSurvivalReward(next);}
+    else next(false);
+  };
   if(S.phase==="group"){
     const me=S.table.find(t=>t.n==="BRASIL"),ad=S.table.find(t=>t.n===o.n);
     me.gf+=mg;me.ga+=og;ad.gf+=og;ad.ga+=mg;
     if(won)me.pts+=3;else if(drew){me.pts++;ad.pts++;}else ad.pts+=3;
     simOtherGroupGame();
+    const next=()=>{ if(S.gIndex>=S.groupOpp.length-1)showStandings(); else {S.gIndex++;loadMatch();} };
     b.textContent=(S.gIndex>=S.groupOpp.length-1)?'Ver classificação':'Próximo jogo →';
-    b.onclick=()=>{ if(S.gIndex>=S.groupOpp.length-1)showStandings(); else {S.gIndex++;loadMatch();} };
+    b.onclick=()=>rewardGate(next);
     return;
   }
   if(!won){b.textContent='Ver resultado';b.onclick=()=>endGame(false,o);return;}
-  if(S.koIndex>=S.koOpp.length-1){b.textContent='🏆 Erguer a taça';b.onclick=()=>endGame(true,o);return;}
-  b.textContent='Próxima fase →';b.onclick=()=>{S.koIndex++;loadMatch();};
+  if(S.koIndex>=S.koOpp.length-1){
+    if(S.survival){b.textContent='Escolher recompensa';b.onclick=()=>showSurvivalReward(()=>survivalCupWon(o));}
+    else{b.textContent='🏆 Erguer a taça';b.onclick=()=>endGame(true,o);}
+    return;
+  }
+  b.textContent='Próxima fase →';b.onclick=()=>rewardGate(()=>{S.koIndex++;loadMatch();});
 }
+function survivalRank(){
+  const t=S.survivalTitles||0;
+  if(t>=5)return 'Império Brasileiro';
+  if(t>=3)return 'Dinastia Brasileira';
+  if(t===2)return 'Bicampeão da Sobrevivência';
+  if(t===1)return 'Campeão da Copa 1';
+  return 'Sobrevivente em construção';
+}
+function showSurvivalReward(next){
+  S.afterReward=next;
+  $('#survivalStage').textContent=`Copa ${S.survivalCup} · dificuldade +${survivalDifficultyBonus()}`;
+  $('#survCups').textContent=S.survivalCup||1;
+  $('#survTitles').textContent=S.survivalTitles||0;
+  $('#survWins').textContent=S.survivalWins||0;
+  $('#survivalRewardText').textContent='Vitória conquistada. Escolha um upgrade permanente para esta sequência.';
+  const rewards=[
+    ['atk','+2 Ataque','Melhora pontas e centroavantes.'],
+    ['mid','+2 Meio','Melhora volantes, meias e armadores.'],
+    ['def','+2 Defesa','Melhora zagueiros e laterais.'],
+    ['gol','+1 Goleiro','Melhora goleiro e pênaltis.'],
+    ['all','+1 Geral','Pequeno ganho em todos os setores.'],
+    ['med','🩺 Departamento Médico','Recupera 1 jogador lesionado ou limpa 1 suspensão.'],
+    ['reroll','+1 Reroll','Fica guardado para uma futura expansão de draft.']
+  ];
+  const grid=$('#rewardGrid');grid.innerHTML='';
+  rewards.forEach(([id,t,d])=>{
+    const card=document.createElement('div');card.className='reward-card';
+    card.innerHTML=`<div class="t">${t}</div><div class="d">${d}</div>`;
+    card.onclick=()=>applySurvivalReward(id);grid.appendChild(card);
+  });
+  show('survivalReward');
+}
+function applySurvivalReward(id){
+  S.survivalBuffs=S.survivalBuffs||{atk:0,mid:0,def:0,gol:0};
+  if(id==='atk')S.survivalBuffs.atk+=2;
+  else if(id==='mid')S.survivalBuffs.mid+=2;
+  else if(id==='def')S.survivalBuffs.def+=2;
+  else if(id==='gol')S.survivalBuffs.gol+=1;
+  else if(id==='all'){S.survivalBuffs.atk++;S.survivalBuffs.mid++;S.survivalBuffs.def++;S.survivalBuffs.gol++;}
+  else if(id==='med'){const msg=applyMedicalDepartment();S.survivalLog=S.survivalLog||[];S.survivalLog.push(msg);}
+  else if(id==='reroll')S.rerollsLeft=(S.rerollsLeft||0)+1;
+  const next=S.afterReward;S.afterReward=null;
+  if(typeof next==='function')next();
+}
+function survivalCupWon(o){
+  S.survivalTitles=(S.survivalTitles||0)+1;
+  burstConfetti();
+  show('end');
+  $('#endIcon').textContent='🏆';
+  $('#endTitle').textContent=S.survivalTitles>=3?'DINASTIA!':'COPA VENCIDA!';
+  $('#endText').textContent=`Você venceu a Copa ${S.survivalCup}. Recorde atual: ${survivalRank()}. A próxima Copa terá adversários mais fortes.`;
+  const wrap=$('#end .bench-btn');
+  wrap.innerHTML=`<button class="btn" onclick="startNextSurvivalCup()">Próxima Copa →</button><button class="btn ghost" id="genBtn" onclick="generateCard()">Compartilhar sequência</button><a id="dlLink" style="display:none"><button class="btn ghost">⬇️ Baixar imagem (PNG)</button></a><button class="btn ghost" onclick="location.reload()">Encerrar</button>`;
+}
+function startNextSurvivalCup(){
+  S.survivalCup=(S.survivalCup||1)+1;
+  S.groupOpp=[];S.koOpp=[];
+  startTournament();
+}
+
 function simOtherGroupGame(){
   const others=S.table.filter(t=>t.n!=="BRASIL");
   const pair=others.filter((_,ix)=>ix!==S.gIndex);const A=pair[0],B=pair[1];if(!A||!B)return;
@@ -842,6 +1071,8 @@ function showStandings(){
 }
 function endGame(champ,o){
   S.champ=champ;show('end');
+  const endBtns=$('#end .bench-btn');
+  if(endBtns)endBtns.innerHTML=`<button class="btn" id="genBtn" onclick="generateCard()">Compartilhar</button><a id="dlLink" style="display:none"><button class="btn ghost">⬇️ Baixar imagem (PNG)</button></a><button class="btn ghost" onclick="location.reload()">Jogar de novo</button>`;
   // profundidade: grupos=2, cada fase KO soma; final/título=máximo
   let reached;
   if(champ)reached=8;
@@ -849,6 +1080,7 @@ function endGame(champ,o){
   else reached=2+KO_ROUNDS.indexOf(o.round); // 16avos=2 ... semi=6
   const st=recordResult(champ,reached);
   if(champ){$('#endIcon').textContent='🏆';$('#endTitle').textContent='HEXACAMPEÃO!';$('#endText').textContent=`Seu Brasil levantou a taça com ${S.formation} (${S.ment})${S.daily?' no Desafio Diário':''}. É HEXA!`;burstConfetti();}
+  else if(S.survival){$('#endIcon').textContent='🔥';$('#endTitle').textContent='Sobrevivência encerrada';const where=o.round==="Fase de Grupos"?"na fase de grupos":`nas ${o.round.toLowerCase()} para ${o.c} ${o.n} ${o.y}`;$('#endText').textContent=`Você caiu ${where}. Títulos seguidos: ${S.survivalTitles||0}. Ranking: ${survivalRank()}.`;S.survivalRun=false;}
   else{$('#endIcon').textContent='😞';$('#endTitle').textContent='Fim da linha';const where=o.round==="Fase de Grupos"?"ainda na fase de grupos":`nas ${o.round.toLowerCase()} para ${o.c} ${o.n} ${o.y}`;$('#endText').textContent=`O Brasil caiu ${where}. ${st.titles?`Você já tem ${st.titles} título(s).`:'O hexa fica pra próxima!'}`;}
 }
 function samplePoisson(l){let L=Math.exp(-l),k=0,p=1;do{k++;p*=Math.random()}while(p>L);return k-1;}
@@ -862,7 +1094,7 @@ const FB='Archivo, Arial, "Helvetica Neue", sans-serif';
 // overalls do time (geral + setores) a partir dos titulares
 function teamOveralls(){
   const def=["GOL","ZAG","LD","LE"],mid=["VOL","MC","MEI","MD","ME"],atk=["PD","PE","CA"];
-  const avg=arr=>arr.length?Math.round(arr.reduce((a,p)=>a+p.o,0)/arr.length):0;
+  const avg=arr=>arr.length?Math.round(arr.reduce((a,p)=>a+playerPower(p),0)/arr.length):0;
   const all=S.starters;
   return {
     geral:avg(all),
@@ -913,7 +1145,7 @@ function drawCard(){
   // ---- HEADER ----
   ctx.textAlign='center';sh(true);
   ctx.fillStyle='#ffd24a';ctx.font='800 38px '+FB;
-  ctx.fillText(S.daily?'RUMO AO HEXA · DESAFIO DIÁRIO':'RUMO AO HEXA · MINHA SELEÇÃO',W/2,86);
+  ctx.fillText(S.survival?'RUMO AO HEXA · SOBREVIVÊNCIA':(S.daily?'RUMO AO HEXA · DESAFIO DIÁRIO':'RUMO AO HEXA · MINHA SELEÇÃO'),W/2,86);
   ctx.fillStyle='#fff';ctx.font='400 92px '+FA;
   ctx.fillText('BRASIL ALL-STARS',W/2,178);
   ctx.fillStyle='#ffd24a';ctx.font='800 34px '+FB;
@@ -975,7 +1207,7 @@ function drawCard(){
   let cy=fy+fh+76;
   ctx.textAlign='center';sh(true);
   ctx.fillStyle='#ffd24a';ctx.font='400 48px '+FA;
-  ctx.fillText(S.champ?'🏆 HEXACAMPEÃO!':'MINHA CAMPANHA',W/2,cy);sh(false);
+  ctx.fillText(S.survival?`🔥 ${survivalRank().toUpperCase()}`:(S.champ?'🏆 HEXACAMPEÃO!':'MINHA CAMPANHA'),W/2,cy);sh(false);
   cy+=20;
 
   // ---- DESTAQUES: craque, artilheiro, V / GP / GC ----

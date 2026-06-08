@@ -968,27 +968,25 @@ function finishMatch(mg,og,o,pen){
   res.innerHTML=`<div class="result-banner ${bannerCls}">${verb} ${mg} a ${og}${penStr}</div>`;
   S.history.push({round:S.phase==="group"?`Copa ${S.survivalCup||1} · Grupos J${S.gIndex+1}`:S.survival?`Copa ${S.survivalCup} · ${o.round}`:o.round,opp:`${o.n} ${o.y}`,flag:o.c,mg,og,pen:penStr,res:won?'V':drew?'E':'D'});
   if(won && S.survival)S.survivalWins=(S.survivalWins||0)+1;
-  const rewardGate=(next)=>{
-    if(won && S.survival){b.textContent='Escolher recompensa';b.onclick=()=>showSurvivalReward(next);}
-    else next(false);
-  };
   if(S.phase==="group"){
     const me=S.table.find(t=>t.n==="BRASIL"),ad=S.table.find(t=>t.n===o.n);
     me.gf+=mg;me.ga+=og;ad.gf+=og;ad.ga+=mg;
     if(won)me.pts+=3;else if(drew){me.pts++;ad.pts++;}else ad.pts+=3;
     simOtherGroupGame();
     const next=()=>{ if(S.gIndex>=S.groupOpp.length-1)showStandings(); else {S.gIndex++;loadMatch();} };
-    b.textContent=(S.gIndex>=S.groupOpp.length-1)?'Ver classificação':'Próximo jogo →';
-    b.onclick=()=>rewardGate(next);
+    if(won && S.survival){ b.textContent='⭐ Escolher recompensa'; b.onclick=()=>showSurvivalReward(next); }
+    else { b.textContent=(S.gIndex>=S.groupOpp.length-1)?'Ver classificação':'Próximo jogo →'; b.onclick=next; }
     return;
   }
   if(!won){b.textContent='Ver resultado';b.onclick=()=>endGame(false,o);return;}
   if(S.koIndex>=S.koOpp.length-1){
-    if(S.survival){b.textContent='Escolher recompensa';b.onclick=()=>showSurvivalReward(()=>survivalCupWon(o));}
+    if(S.survival){b.textContent='⭐ Escolher recompensa';b.onclick=()=>showSurvivalReward(()=>survivalCupWon(o));}
     else{b.textContent='🏆 Erguer a taça';b.onclick=()=>endGame(true,o);}
     return;
   }
-  b.textContent='Próxima fase →';b.onclick=()=>rewardGate(()=>{S.koIndex++;loadMatch();});
+  const nextPhase=()=>{S.koIndex++;loadMatch();};
+  if(S.survival){ b.textContent='⭐ Escolher recompensa'; b.onclick=()=>showSurvivalReward(nextPhase); }
+  else { b.textContent='Próxima fase →'; b.onclick=nextPhase; }
 }
 function survivalRank(){
   const t=S.survivalTitles||0;
@@ -1004,18 +1002,19 @@ function showSurvivalReward(next){
   $('#survCups').textContent=S.survivalCup||1;
   $('#survTitles').textContent=S.survivalTitles||0;
   $('#survWins').textContent=S.survivalWins||0;
-  $('#survivalRewardText').textContent='Vitória conquistada. Escolha um upgrade permanente para esta sequência.';
-  const rewards=[
+  $('#survivalRewardText').textContent='Vitória conquistada. Escolha UMA das 3 recompensas sorteadas.';
+  const pool=[
     ['atk','+2 Ataque','Melhora pontas e centroavantes.'],
     ['mid','+2 Meio','Melhora volantes, meias e armadores.'],
     ['def','+2 Defesa','Melhora zagueiros e laterais.'],
     ['gol','+1 Goleiro','Melhora goleiro e pênaltis.'],
     ['all','+1 Geral','Pequeno ganho em todos os setores.'],
-    ['med','🩺 Departamento Médico','Recupera 1 jogador lesionado ou limpa 1 suspensão.'],
-    ['reroll','🎲 Reroll de Jogador','Escolha 1 atleta do elenco e troque por nova opção da mesma posição.']
+    ['reroll','🎲 Reroll de Jogador','Troque 1 atleta do elenco por outro da mesma posição.']
   ];
+  if(medicalTargets().length)pool.push(['med','🩺 Departamento Médico','Recupera 1 jogador lesionado ou limpa 1 suspensão.']);
+  const chosen=shuffle(pool).slice(0,3);
   const grid=$('#rewardGrid');grid.innerHTML='';
-  rewards.forEach(([id,t,d])=>{
+  chosen.forEach(([id,t,d])=>{
     const card=document.createElement('div');card.className='reward-card';
     card.innerHTML=`<div class="t">${t}</div><div class="d">${d}</div>`;
     card.onclick=()=>applySurvivalReward(id);grid.appendChild(card);

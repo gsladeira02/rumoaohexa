@@ -213,7 +213,6 @@ img,canvas{max-width:100%}
     <div class="bench-btn" style="margin-top:0">
       <button class="btn" onclick="startSetup(false)">🏆 Modo Carreira</button>
       <button class="btn ghost" onclick="startDaily()">📅 Desafio Diário</button>
-      <button class="btn ghost" onclick="startSurvivalSetup()">🔥 Modo Sobrevivência</button>
     </div>
     <p class="muted" id="recordLine">504 convocados · 9 posições · 7 esquemas</p>
   </section>
@@ -272,7 +271,10 @@ img,canvas{max-width:100%}
       <div class="review-field" id="reviewField"></div>
       <div class="review-bench" id="reviewBench"></div>
     </div>
-    <div class="bench-btn"><button class="btn" onclick="confirmTournament()">Começar a Copa</button></div>
+    <div class="bench-btn">
+      <button class="btn" onclick="confirmTournament()">Começar a Copa</button>
+      <button class="btn ghost" onclick="backToHomeBeforeCup()">⬅ Voltar aos modos</button>
+    </div>
   </section>
 
 
@@ -340,8 +342,8 @@ img,canvas{max-width:100%}
 const PLAYERS_DB={"GOL":[{"n":"Joel","y":1930,"o":78},{"n":"Velloso","y":1930,"o":77},{"n":"Germano","y":1934,"o":78},{"n":"Roberto Gomes Pedrosa","y":1934,"o":77},{"n":"Walter","y":1938,"o":78},{"n":"Batatais","y":1938,"o":77},{"n":"Barbosa","y":1950,"o":85},{"n":"Castilho","y":1950,"o":79},{"n":"Castilho","y":1954,"o":80},{"n":"Veludo","y":1954,"o":79},{"n":"Cabeção","y":1954,"o":77},{"n":"Gylmar","y":1958,"o":90},{"n":"Castilho","y":1958,"o":80},{"n":"Dida","y":1958,"o":77},{"n":"Gylmar","y":1962,"o":91},{"n":"Castilho","y":1962,"o":81},{"n":"Gylmar","y":1966,"o":88},{"n":"Manga","y":1966,"o":82},{"n":"Félix","y":1970,"o":83},{"n":"Ado","y":1970,"o":78},{"n":"Emerson Leão","y":1970,"o":86},{"n":"Emerson Leão","y":1974,"o":87},{"n":"Renato","y":1974,"o":79},{"n":"Waldir Peres","y":1974,"o":80},{"n":"Emerson Leão","y":1978,"o":87},{"n":"Carlos","y":1978,"o":79},{"n":"Waldir Peres","y":1978,"o":80},{"n":"Waldir Peres","y":1982,"o":80},{"n":"Paulo Sérgio","y":1982,"o":79},{"n":"Carlos","y":1982,"o":79},{"n":"Carlos","y":1986,"o":81},{"n":"Paulo Victor","y":1986,"o":79},{"n":"Emerson Leão","y":1986,"o":85},{"n":"Júlio César","y":1986,"o":77},{"n":"Taffarel","y":1990,"o":86},{"n":"Acácio","y":1990,"o":79},{"n":"Zé Carlos","y":1990,"o":80},{"n":"Taffarel","y":1994,"o":89},{"n":"Zetti","y":1994,"o":80},{"n":"Gilmar Rinaldi","y":1994,"o":80},{"n":"Taffarel","y":1998,"o":88},{"n":"Carlos Germano","y":1998,"o":80},{"n":"Dida","y":1998,"o":82},{"n":"Marcos","y":2002,"o":87},{"n":"Dida","y":2002,"o":86},{"n":"Rogério Ceni","y":2002,"o":82},{"n":"Dida","y":2006,"o":86},{"n":"Rogério Ceni","y":2006,"o":82},{"n":"Júlio César","y":2006,"o":84},{"n":"Júlio César","y":2010,"o":88},{"n":"Gomes","y":2010,"o":81},{"n":"Doni","y":2010,"o":80},{"n":"Jefferson","y":2014,"o":81},{"n":"Júlio César","y":2014,"o":85},{"n":"Victor","y":2014,"o":80},{"n":"Alisson","y":2018,"o":90},{"n":"Cássio","y":2018,"o":83},{"n":"Ederson","y":2018,"o":87},{"n":"Alisson","y":2022,"o":91},{"n":"Weverton","y":2022,"o":80},{"n":"Ederson","y":2022,"o":87},{"n":"Alisson","y":2026,"o":91},{"n":"Ederson","y":2026,"o":87},{"n":"Weverton","y":2026,"o":81}],"LD":[{"n":"Danilo","y":1950,"o":78},{"n":"Djalma Santos","y":1954,"o":90},{"n":"Djalma Santos","y":1958,"o":93},{"n":"Djalma Santos","y":1962,"o":92},{"n":"Djalma Santos","y":1966,"o":86},{"n":"Fidélis","y":1966,"o":79},{"n":"Carlos Alberto Torres","y":1970,"o":94},{"n":"Zé Maria","y":1970,"o":81},{"n":"Zé Maria","y":1974,"o":82},{"n":"Nelinho","y":1974,"o":81},{"n":"Nelinho","y":1978,"o":82},{"n":"Leandro","y":1982,"o":87},{"n":"Édson","y":1986,"o":80},{"n":"Josimar","y":1986,"o":81},{"n":"Jorginho","y":1990,"o":82},{"n":"Jorginho","y":1994,"o":80},{"n":"Cafu","y":1994,"o":87},{"n":"Cafu","y":1998,"o":91},{"n":"Cafu","y":2002,"o":93},{"n":"Cafu","y":2006,"o":88},{"n":"Cicinho","y":2006,"o":81},{"n":"Maicon","y":2010,"o":87},{"n":"Daniel Alves","y":2010,"o":88},{"n":"Daniel Alves","y":2014,"o":87},{"n":"Maicon","y":2014,"o":84},{"n":"Danilo","y":2018,"o":82},{"n":"Fágner","y":2018,"o":80},{"n":"Danilo","y":2022,"o":82},{"n":"Daniel Alves","y":2022,"o":80},{"n":"Wesley","y":2026,"o":82},{"n":"Danilo","y":2026,"o":81}],"LE":[{"n":"Nílton Santos","y":1950,"o":90},{"n":"Nílton Santos","y":1954,"o":93},{"n":"Paulinho de Almeida","y":1954,"o":79},{"n":"Ely","y":1954,"o":79},{"n":"Oreco","y":1958,"o":78},{"n":"Nílton Santos","y":1958,"o":94},{"n":"De Sordi","y":1958,"o":79},{"n":"Nílton Santos","y":1962,"o":93},{"n":"Jair Marinho","y":1962,"o":79},{"n":"Altair","y":1962,"o":79},{"n":"Paulo Henrique","y":1966,"o":80},{"n":"Rildo","y":1966,"o":80},{"n":"Marco Antônio","y":1970,"o":82},{"n":"Everaldo","y":1970,"o":80},{"n":"Marinho Chagas","y":1974,"o":82},{"n":"Marco Antônio","y":1974,"o":80},{"n":"Toninho","y":1978,"o":80},{"n":"Rodrigues Neto","y":1978,"o":80},{"n":"Júnior","y":1982,"o":91},{"n":"Edevaldo","y":1982,"o":80},{"n":"Pedrinho","y":1982,"o":79},{"n":"Branco","y":1986,"o":84},{"n":"Júnior","y":1986,"o":87},{"n":"Branco","y":1990,"o":85},{"n":"Mazinho","y":1990,"o":81},{"n":"Branco","y":1994,"o":86},{"n":"Leonardo","y":1994,"o":87},{"n":"Roberto Carlos","y":1998,"o":93},{"n":"Zé Carlos","y":1998,"o":78},{"n":"Roberto Carlos","y":2002,"o":94},{"n":"Belletti","y":2002,"o":81},{"n":"Júnior","y":2002,"o":90},{"n":"Roberto Carlos","y":2006,"o":90},{"n":"Gilberto","y":2006,"o":79},{"n":"Michel Bastos","y":2010,"o":83},{"n":"Gilberto","y":2010,"o":81},{"n":"Marcelo","y":2014,"o":89},{"n":"Maxwell","y":2014,"o":83},{"n":"Filipe Luís","y":2018,"o":81},{"n":"Marcelo","y":2018,"o":87},{"n":"Alex Sandro","y":2022,"o":80},{"n":"Alex Telles","y":2022,"o":81},{"n":"Alex Sandro","y":2026,"o":83},{"n":"Douglas Santos","y":2026,"o":80}],"ZAG":[{"n":"Fernando","y":1930,"o":80},{"n":"Brilhante","y":1930,"o":80},{"n":"Itália","y":1930,"o":79},{"n":"Zé Luiz","y":1930,"o":79},{"n":"Oscarino","y":1930,"o":78},{"n":"Luiz Luz","y":1934,"o":79},{"n":"Octacílio","y":1934,"o":78},{"n":"Sylvio Hoffman","y":1934,"o":79},{"n":"Nariz","y":1938,"o":80},{"n":"Domingos da Guia","y":1938,"o":92},{"n":"Machado","y":1938,"o":79},{"n":"Jaú","y":1938,"o":81},{"n":"Augusto","y":1950,"o":80},{"n":"Bigode","y":1950,"o":80},{"n":"Ely","y":1950,"o":81},{"n":"Juvenal","y":1950,"o":79},{"n":"Nena","y":1950,"o":78},{"n":"Pinheiro","y":1954,"o":79},{"n":"Alfredo Ramos","y":1954,"o":80},{"n":"Mauro Ramos","y":1954,"o":87},{"n":"Bellini","y":1958,"o":89},{"n":"Zózimo","y":1958,"o":80},{"n":"Orlando Peçanha","y":1958,"o":81},{"n":"Mauro Ramos","y":1958,"o":87},{"n":"Mauro Ramos","y":1962,"o":87},{"n":"Zózimo","y":1962,"o":83},{"n":"Bellini","y":1962,"o":87},{"n":"Jurandir","y":1962,"o":81},{"n":"Bellini","y":1966,"o":85},{"n":"Brito","y":1966,"o":82},{"n":"Altair","y":1966,"o":82},{"n":"Orlando","y":1966,"o":80},{"n":"Brito","y":1970,"o":84},{"n":"Baldocchi","y":1970,"o":80},{"n":"Fontana","y":1970,"o":82},{"n":"Joel Camargo","y":1970,"o":80},{"n":"Luís Pereira","y":1974,"o":82},{"n":"Marinho Peres","y":1974,"o":81},{"n":"Alfredo Mostarda","y":1974,"o":82},{"n":"Oscar","y":1978,"o":87},{"n":"Amaral","y":1978,"o":82},{"n":"Edinho","y":1978,"o":83},{"n":"Abel Braga","y":1978,"o":80},{"n":"Polozzi","y":1978,"o":80},{"n":"Oscar","y":1982,"o":87},{"n":"Luisinho","y":1982,"o":82},{"n":"Juninho Fonseca","y":1982,"o":80},{"n":"Edinho","y":1982,"o":82},{"n":"Oscar","y":1986,"o":87},{"n":"Edinho","y":1986,"o":82},{"n":"Mauro Galvão","y":1986,"o":80},{"n":"Ricardo Gomes","y":1990,"o":82},{"n":"Mozer","y":1990,"o":81},{"n":"Aldair","y":1990,"o":87},{"n":"Ricardo Rocha","y":1990,"o":81},{"n":"Mauro Galvão","y":1990,"o":80},{"n":"Ricardo Rocha","y":1994,"o":80},{"n":"Ronaldão","y":1994,"o":80},{"n":"Aldair","y":1994,"o":89},{"n":"Márcio Santos","y":1994,"o":81},{"n":"Aldair","y":1998,"o":87},{"n":"Júnior Baiano","y":1998,"o":80},{"n":"Gonçalves","y":1998,"o":81},{"n":"André Cruz","y":1998,"o":80},{"n":"Lúcio","y":2002,"o":90},{"n":"Roque Júnior","y":2002,"o":85},{"n":"Edmílson","y":2002,"o":81},{"n":"Anderson Polga","y":2002,"o":81},{"n":"Lúcio","y":2006,"o":90},{"n":"Juan","y":2006,"o":85},{"n":"Luisão","y":2006,"o":82},{"n":"Cris","y":2006,"o":80},{"n":"Lúcio","y":2010,"o":87},{"n":"Juan","y":2010,"o":85},{"n":"Luisão","y":2010,"o":80},{"n":"Thiago Silva","y":2010,"o":89},{"n":"Thiago Silva","y":2014,"o":91},{"n":"David Luiz","y":2014,"o":86},{"n":"Dante","y":2014,"o":83},{"n":"Henrique","y":2014,"o":82},{"n":"Thiago Silva","y":2018,"o":89},{"n":"Miranda","y":2018,"o":84},{"n":"Pedro Geromel","y":2018,"o":82},{"n":"Marquinhos","y":2018,"o":87},{"n":"Thiago Silva","y":2022,"o":88},{"n":"Marquinhos","y":2022,"o":90},{"n":"Éder Militão","y":2022,"o":85},{"n":"Bremer","y":2022,"o":84},{"n":"Marquinhos","y":2026,"o":90},{"n":"Gabriel Magalhães","y":2026,"o":86},{"n":"Bremer","y":2026,"o":82},{"n":"Ibañez","y":2026,"o":81},{"n":"Léo Pereira","y":2026,"o":81},{"n":"Casemiro","y":2018,"o":84},{"n":"Casemiro","y":2022,"o":85},{"n":"Casemiro","y":2026,"o":83},{"n":"Dunga","y":1990,"o":81},{"n":"Dunga","y":1994,"o":84},{"n":"Dunga","y":1998,"o":80}],"VOL":[{"n":"Ivan Mariz","y":1930,"o":79},{"n":"Fortes","y":1930,"o":79},{"n":"Pamplona","y":1930,"o":76},{"n":"Fausto","y":1930,"o":84},{"n":"Benevenuto","y":1930,"o":79},{"n":"Hermógenes","y":1930,"o":80},{"n":"Tinoco","y":1934,"o":76},{"n":"Martim","y":1934,"o":76},{"n":"Canalli","y":1934,"o":79},{"n":"Ariel","y":1934,"o":78},{"n":"Waldir","y":1934,"o":78},{"n":"Britto","y":1938,"o":80},{"n":"Zezé Procópio","y":1938,"o":79},{"n":"Argemiro","y":1938,"o":79},{"n":"Affonsinho","y":1938,"o":78},{"n":"Bauer","y":1950,"o":79},{"n":"Noronha","y":1950,"o":79},{"n":"Brandãozinho","y":1954,"o":76},{"n":"Bauer","y":1954,"o":78},{"n":"Dequinha","y":1954,"o":76},{"n":"Rubens","y":1954,"o":80},{"n":"Dino Sani","y":1958,"o":79},{"n":"Moacir","y":1958,"o":79},{"n":"Zito","y":1958,"o":88},{"n":"Zito","y":1962,"o":89},{"n":"Denílson","y":1966,"o":83},{"n":"Lima","y":1966,"o":81},{"n":"Zito","y":1966,"o":84},{"n":"Wilson Piazza","y":1970,"o":86},{"n":"Clodoaldo","y":1970,"o":87},{"n":"Wilson Piazza","y":1974,"o":85},{"n":"Carpegiani","y":1974,"o":79},{"n":"Toninho Cerezo","y":1978,"o":83},{"n":"Batista","y":1978,"o":79},{"n":"Toninho Cerezo","y":1982,"o":86},{"n":"Falcão","y":1982,"o":91},{"n":"Batista","y":1982,"o":80},{"n":"Falcão","y":1986,"o":87},{"n":"Elzo","y":1986,"o":80},{"n":"Silas","y":1986,"o":83},{"n":"Dunga","y":1990,"o":83},{"n":"Bismarck","y":1990,"o":80},{"n":"Silas","y":1990,"o":80},{"n":"Mauro Silva","y":1994,"o":85},{"n":"Dunga","y":1994,"o":86},{"n":"César Sampaio","y":1998,"o":79},{"n":"Dunga","y":1998,"o":82},{"n":"Emerson","y":1998,"o":81},{"n":"Doriva","y":1998,"o":80},{"n":"Ricardinho","y":2002,"o":80},{"n":"Gilberto Silva","y":2002,"o":85},{"n":"Kléberson","y":2002,"o":80},{"n":"Vampeta","y":2002,"o":83},{"n":"Emerson","y":2006,"o":80},{"n":"Gilberto Silva","y":2006,"o":83},{"n":"Mineiro","y":2006,"o":81},{"n":"Ricardinho","y":2006,"o":84},{"n":"Felipe Melo","y":2010,"o":83},{"n":"Gilberto Silva","y":2010,"o":81},{"n":"Josué","y":2010,"o":84},{"n":"Kléberson","y":2010,"o":83},{"n":"Fernandinho","y":2014,"o":80},{"n":"Luiz Gustavo","y":2014,"o":80},{"n":"Casemiro","y":2018,"o":86},{"n":"Renato Augusto","y":2018,"o":83},{"n":"Fernandinho","y":2018,"o":84},{"n":"Casemiro","y":2022,"o":87},{"n":"Fabinho","y":2022,"o":83},{"n":"Bruno Guimarães","y":2022,"o":85},{"n":"Everton Ribeiro","y":2022,"o":81},{"n":"Casemiro","y":2026,"o":85},{"n":"Bruno Guimarães","y":2026,"o":85},{"n":"Danilo Botafogo","y":2026,"o":80},{"n":"Fabinho","y":2026,"o":83},{"n":"Gérson","y":1966,"o":86},{"n":"Gérson","y":1970,"o":90},{"n":"Rivellino","y":1970,"o":91},{"n":"Rivellino","y":1974,"o":87},{"n":"Rivellino","y":1978,"o":84},{"n":"Lúcio","y":2002,"o":86},{"n":"Lúcio","y":2006,"o":86},{"n":"Lúcio","y":2010,"o":83},{"n":"Thiago Silva","y":2010,"o":86},{"n":"Thiago Silva","y":2014,"o":88},{"n":"Thiago Silva","y":2018,"o":85},{"n":"Thiago Silva","y":2022,"o":84},{"n":"Aldair","y":1990,"o":82},{"n":"Aldair","y":1994,"o":85},{"n":"Aldair","y":1998,"o":83},{"n":"Didi","y":1954,"o":87},{"n":"Didi","y":1958,"o":91},{"n":"Didi","y":1962,"o":89}],"MC":[{"n":"Brandão","y":1938,"o":78},{"n":"Chicão","y":1978,"o":79},{"n":"Mazinho","y":1994,"o":83},{"n":"Leonardo","y":1998,"o":86},{"n":"Ramires","y":2010,"o":83},{"n":"Paulinho","y":2014,"o":81},{"n":"Ramires","y":2014,"o":83},{"n":"Willian","y":2014,"o":84},{"n":"Paulinho","y":2018,"o":81},{"n":"Fred","y":2018,"o":84},{"n":"Willian","y":2018,"o":84},{"n":"Fred","y":2022,"o":81}],"MEI":[{"n":"Rui","y":1950,"o":76},{"n":"Zizinho","y":1950,"o":92},{"n":"Didi","y":1954,"o":89},{"n":"Didi","y":1958,"o":93},{"n":"Pelé","y":1958,"o":95},{"n":"Didi","y":1962,"o":91},{"n":"Zequinha","y":1962,"o":79},{"n":"Mengálvio","y":1962,"o":81},{"n":"Pelé","y":1962,"o":94},{"n":"Gérson","y":1966,"o":88},{"n":"Pelé","y":1966,"o":92},{"n":"Gérson","y":1970,"o":92},{"n":"Rivellino","y":1970,"o":93},{"n":"Pelé","y":1970,"o":99},{"n":"Rivellino","y":1974,"o":89},{"n":"Paulo César Caju","y":1974,"o":79},{"n":"Ademir da Guia","y":1974,"o":83},{"n":"Zico","y":1978,"o":89},{"n":"Rivellino","y":1978,"o":86},{"n":"Sócrates","y":1982,"o":93},{"n":"Zico","y":1982,"o":95},{"n":"Zico","y":1986,"o":91},{"n":"Alemão","y":1986,"o":83},{"n":"Sócrates","y":1986,"o":90},{"n":"Valdo","y":1986,"o":81},{"n":"Alemão","y":1990,"o":83},{"n":"Valdo","y":1990,"o":81},{"n":"Tita","y":1990,"o":79},{"n":"Zinho","y":1994,"o":83},{"n":"Raí","y":1994,"o":88},{"n":"Paulo Sérgio","y":1994,"o":80},{"n":"Giovanni","y":1998,"o":81},{"n":"Rivaldo","y":1998,"o":91},{"n":"Zé Roberto","y":1998,"o":81},{"n":"Rivaldo","y":2002,"o":93},{"n":"Juninho Paulista","y":2002,"o":84},{"n":"Kaká","y":2002,"o":84},{"n":"Ronaldinho Gaúcho","y":2002,"o":90},{"n":"Kaká","y":2006,"o":93},{"n":"Ronaldinho Gaúcho","y":2006,"o":95},{"n":"Zé Roberto","y":2006,"o":80},{"n":"Juninho Pernambucano","y":2006,"o":83},{"n":"Elano","y":2010,"o":84},{"n":"Kaká","y":2010,"o":87},{"n":"Daniel Alves","y":2010,"o":85},{"n":"Júlio Baptista","y":2010,"o":81},{"n":"Oscar","y":2014,"o":85},{"n":"Hernanes","y":2014,"o":80},{"n":"Philippe Coutinho","y":2018,"o":85},{"n":"Lucas Paquetá","y":2022,"o":83},{"n":"Lucas Paquetá","y":2026,"o":83},{"n":"Falcão","y":1982,"o":89},{"n":"Falcão","y":1986,"o":85},{"n":"Júnior","y":1982,"o":87},{"n":"Júnior","y":1986,"o":83},{"n":"Júnior","y":2002,"o":88},{"n":"Neymar","y":2014,"o":88},{"n":"Neymar","y":2018,"o":88},{"n":"Neymar","y":2022,"o":89},{"n":"Neymar","y":2026,"o":86},{"n":"Roberto Carlos","y":1998,"o":88},{"n":"Roberto Carlos","y":2002,"o":90},{"n":"Roberto Carlos","y":2006,"o":85},{"n":"Clodoaldo","y":1970,"o":84},{"n":"Toninho Cerezo","y":1978,"o":81},{"n":"Toninho Cerezo","y":1982,"o":84},{"n":"Tostão","y":1966,"o":82},{"n":"Tostão","y":1970,"o":89}],"PD":[{"n":"Nilo","y":1930,"o":80},{"n":"Carvalho Leite","y":1930,"o":80},{"n":"Russinho","y":1930,"o":81},{"n":"Theóphilo","y":1930,"o":81},{"n":"Poly","y":1930,"o":81},{"n":"Friaça","y":1950,"o":80},{"n":"Julinho Botelho","y":1954,"o":78},{"n":"Maurinho","y":1954,"o":80},{"n":"Garrincha","y":1958,"o":93},{"n":"Mazzola","y":1958,"o":79},{"n":"Pepe","y":1958,"o":80},{"n":"Garrincha","y":1962,"o":97},{"n":"Pepe","y":1962,"o":84},{"n":"Garrincha","y":1966,"o":84},{"n":"Jairzinho","y":1966,"o":84},{"n":"Edu","y":1966,"o":84},{"n":"Jairzinho","y":1970,"o":91},{"n":"Edu","y":1970,"o":84},{"n":"Jairzinho","y":1974,"o":85},{"n":"Valdomiro","y":1974,"o":81},{"n":"Mirandinha","y":1974,"o":81},{"n":"Edu","y":1974,"o":84},{"n":"Zé Sérgio","y":1978,"o":84},{"n":"Gil","y":1978,"o":80},{"n":"Paulo Isidoro","y":1982,"o":81},{"n":"Bernard","y":2014,"o":83},{"n":"Douglas Costa","y":2018,"o":85},{"n":"Raphinha","y":2022,"o":83},{"n":"Antony","y":2022,"o":80},{"n":"Rodrygo","y":2022,"o":84},{"n":"Raphinha","y":2026,"o":86},{"n":"Luiz Henrique","y":2026,"o":82},{"n":"Daniel Alves","y":2010,"o":85},{"n":"Daniel Alves","y":2014,"o":84},{"n":"Daniel Alves","y":2022,"o":78},{"n":"Cafu","y":1994,"o":82},{"n":"Cafu","y":1998,"o":87},{"n":"Cafu","y":2002,"o":89},{"n":"Cafu","y":2006,"o":84},{"n":"Maicon","y":2010,"o":84},{"n":"Maicon","y":2014,"o":84}],"PE":[{"n":"Doca","y":1930,"o":80},{"n":"Moderato","y":1930,"o":78},{"n":"Manoelzinho","y":1930,"o":80},{"n":"Chico","y":1950,"o":78},{"n":"Zagallo","y":1958,"o":88},{"n":"Zagallo","y":1962,"o":88},{"n":"Paulo César Caju","y":1970,"o":83},{"n":"Dadá Maravilha","y":1970,"o":80},{"n":"Dirceu","y":1974,"o":84},{"n":"Dirceu","y":1978,"o":84},{"n":"Éder Aleixo","y":1982,"o":86},{"n":"Dirceu","y":1982,"o":84},{"n":"Edivaldo","y":1986,"o":81},{"n":"Renato Gaúcho","y":1990,"o":83},{"n":"Robinho","y":2006,"o":82},{"n":"Robinho","y":2010,"o":84},{"n":"Neymar","y":2014,"o":90},{"n":"Neymar","y":2018,"o":90},{"n":"Taison","y":2018,"o":84},{"n":"Neymar","y":2022,"o":91},{"n":"Vinícius Júnior","y":2022,"o":88},{"n":"Gabriel Martinelli","y":2022,"o":80},{"n":"Vinícius Júnior","y":2026,"o":90},{"n":"Gabriel Martinelli","y":2026,"o":81},{"n":"Neymar","y":2026,"o":88},{"n":"Ronaldinho Gaúcho","y":2002,"o":88},{"n":"Ronaldinho Gaúcho","y":2006,"o":93},{"n":"Rivaldo","y":1998,"o":89},{"n":"Rivaldo","y":2002,"o":91},{"n":"Raphinha","y":2022,"o":81},{"n":"Raphinha","y":2026,"o":84},{"n":"Gabriel Jesus","y":2018,"o":81},{"n":"Gabriel Jesus","y":2022,"o":81},{"n":"Richarlison","y":2022,"o":82},{"n":"Marcelo","y":2014,"o":85},{"n":"Marcelo","y":2018,"o":83},{"n":"Careca","y":1986,"o":85},{"n":"Careca","y":1990,"o":87},{"n":"Adriano","y":2006,"o":83},{"n":"Endrick","y":2026,"o":81}],"CA":[{"n":"Preguinho","y":1930,"o":83},{"n":"Benedicto","y":1930,"o":79},{"n":"Araken Patusca","y":1930,"o":79},{"n":"Luizinho","y":1934,"o":80},{"n":"Waldemar de Britto","y":1934,"o":79},{"n":"Armandinho","y":1934,"o":81},{"n":"Leônidas da Silva","y":1934,"o":87},{"n":"Áttila","y":1934,"o":81},{"n":"Patesko","y":1934,"o":78},{"n":"Leônidas da Silva","y":1938,"o":92},{"n":"Perácio","y":1938,"o":78},{"n":"Lopes","y":1938,"o":79},{"n":"Hércules","y":1938,"o":81},{"n":"Romeu","y":1938,"o":79},{"n":"Tim","y":1938,"o":81},{"n":"Roberto","y":1938,"o":81},{"n":"Niginho","y":1938,"o":81},{"n":"Adãozinho","y":1950,"o":79},{"n":"Ademir de Menezes","y":1950,"o":90},{"n":"Alfredo","y":1950,"o":81},{"n":"Baltazar","y":1950,"o":81},{"n":"Jair Rosa Pinto","y":1950,"o":84},{"n":"Maneca","y":1950,"o":78},{"n":"Baltazar","y":1954,"o":78},{"n":"Pinga","y":1954,"o":78},{"n":"Humberto","y":1954,"o":78},{"n":"Índio","y":1954,"o":81},{"n":"Vavá","y":1958,"o":87},{"n":"Coutinho","y":1962,"o":86},{"n":"Vavá","y":1962,"o":86},{"n":"Amarildo","y":1962,"o":85},{"n":"Tostão","y":1966,"o":84},{"n":"Tostão","y":1970,"o":91},{"n":"Roberto Miranda","y":1970,"o":83},{"n":"Leivinha","y":1974,"o":83},{"n":"César Maluco","y":1974,"o":83},{"n":"Reinaldo","y":1978,"o":85},{"n":"Jorge Mendonça","y":1978,"o":83},{"n":"Roberto Dinamite","y":1978,"o":86},{"n":"Serginho Chulapa","y":1982,"o":81},{"n":"Roberto Dinamite","y":1982,"o":87},{"n":"Muller","y":1986,"o":84},{"n":"Casagrande","y":1986,"o":80},{"n":"Careca","y":1986,"o":87},{"n":"Careca","y":1990,"o":89},{"n":"Romário","y":1990,"o":88},{"n":"Muller","y":1990,"o":84},{"n":"Bebeto","y":1990,"o":85},{"n":"Bebeto","y":1994,"o":88},{"n":"Romário","y":1994,"o":95},{"n":"Muller","y":1994,"o":84},{"n":"Ronaldo","y":1994,"o":84},{"n":"Viola","y":1994,"o":80},{"n":"Ronaldo","y":1998,"o":96},{"n":"Denílson","y":1998,"o":83},{"n":"Bebeto","y":1998,"o":90},{"n":"Edmundo","y":1998,"o":84},{"n":"Ronaldo","y":2002,"o":98},{"n":"Denílson","y":2002,"o":83},{"n":"Edílson","y":2002,"o":85},{"n":"Luizão","y":2002,"o":81},{"n":"Adriano","y":2006,"o":85},{"n":"Ronaldo","y":2006,"o":90},{"n":"Fred","y":2006,"o":84},{"n":"Luís Fabiano","y":2010,"o":84},{"n":"Nilmar","y":2010,"o":84},{"n":"Grafite","y":2010,"o":84},{"n":"Hulk","y":2014,"o":84},{"n":"Fred","y":2014,"o":83},{"n":"Jô","y":2014,"o":85},{"n":"Gabriel Jesus","y":2018,"o":83},{"n":"Roberto Firmino","y":2018,"o":84},{"n":"Richarlison","y":2022,"o":84},{"n":"Gabriel Jesus","y":2022,"o":83},{"n":"Pedro","y":2022,"o":80},{"n":"Endrick","y":2026,"o":83},{"n":"Matheus Cunha","y":2026,"o":83},{"n":"Rayan","y":2026,"o":79},{"n":"Igor Thiago","y":2026,"o":79},{"n":"Rivaldo","y":1998,"o":89},{"n":"Rivaldo","y":2002,"o":91},{"n":"Kaká","y":2002,"o":82},{"n":"Kaká","y":2006,"o":91},{"n":"Kaká","y":2010,"o":85},{"n":"Robinho","y":2006,"o":80},{"n":"Robinho","y":2010,"o":82},{"n":"Vinícius Júnior","y":2022,"o":86},{"n":"Vinícius Júnior","y":2026,"o":88},{"n":"Zico","y":1978,"o":87},{"n":"Zico","y":1982,"o":93},{"n":"Zico","y":1986,"o":89},{"n":"Sócrates","y":1982,"o":91},{"n":"Sócrates","y":1986,"o":88},{"n":"Neymar","y":2014,"o":88},{"n":"Neymar","y":2018,"o":88},{"n":"Neymar","y":2022,"o":89},{"n":"Neymar","y":2026,"o":86},{"n":"Jairzinho","y":1966,"o":82},{"n":"Jairzinho","y":1970,"o":89},{"n":"Jairzinho","y":1974,"o":83},{"n":"Rodrygo","y":2022,"o":82},{"n":"Gabriel Martinelli","y":2022,"o":78},{"n":"Gabriel Martinelli","y":2026,"o":79}]};
 </script>
 <script>
-const POSNAME={GOL:"GOLEIRO",LD:"LATERAL DIREITO",LE:"LATERAL ESQUERDO",ZAG:"ZAGUEIRO",VOL:"VOLANTE",MC:"MEIA-CENTRAL",MEI:"MEIA",MD:"MEIA-DIREITA",ME:"MEIA-ESQUERDA",PD:"PONTA DIREITA",PE:"PONTA ESQUERDA",CA:"CENTROAVANTE"};
-const POSABBR={GOL:"GOL",LD:"LD",LE:"LE",ZAG:"ZAG",VOL:"VOL",MC:"MC",MEI:"MEI",MD:"MD",ME:"ME",PD:"PD",PE:"PE",CA:"CA"};
+const POSNAME={GOL:"GOLEIRO",LD:"LATERAL DIREITO",LE:"LATERAL ESQUERDO",ZAG:"ZAGUEIRO",VOL:"VOLANTE",MC:"MEIA-CENTRAL",MEI:"MEIA",MD:"MEIA-DIREITA",ME:"MEIA-ESQUERDA",PD:"PONTA DIREITA",PE:"PONTA ESQUERDA",CA:"ATACANTE"};
+const POSABBR={GOL:"GOL",LD:"LD",LE:"LE",ZAG:"ZAG",VOL:"VOL",MC:"MC",MEI:"MEI",MD:"MD",ME:"ME",PD:"PD",PE:"PE",CA:"ATA"};
 const FACE={GOL:"🧤",LD:"➡️",LE:"⬅️",ZAG:"🛡️",VOL:"🧱",MC:"🎯",MEI:"🪄",MD:"🎯",ME:"🎯",PD:"⚡",PE:"⚡",CA:"🎯"};
 const FORMATIONS={
   "4-4-2":["GOL","ZAG","ZAG","LD","LE","MC","MEI","MEI","MC","CA","CA"],
@@ -361,9 +363,9 @@ const VERSATILE_WINGERS={
   MD:["Garrincha","Jairzinho","Cafu","Mazzola"]
 };
 const FORM_DESC={
-  "4-4-2":"2 zagueiros, 2 laterais, miolo de 4, 2 centroavantes",
+  "4-4-2":"2 zagueiros, 2 laterais, miolo de 4, 2 atacantes",
   "4-3-3":"linha de 4, 3 no meio e ataque com 2 pontas",
-  "4-5-1":"meio com 5 (ME/MD), 1 centroavante",
+  "4-5-1":"meio com 5 (ME/MD), 1 atacante",
   "3-5-2":"3 zagueiros, sem laterais, meio com 5 (ME/MD)",
   "3-4-3":"3 zagueiros e trio de ataque com pontas",
   "5-3-2":"5 defensores com alas, 3 no meio, 2 frente",
@@ -432,11 +434,9 @@ function startSetup(daily){
   show('setup');
 }
 function startSurvivalSetup(){
-  startSetup(false);
-  S.survival=true;
-  const k=$('#setup .kicker'); if(k)k.textContent='Sobrevivência';
-  const title=$('#setup .scr-title'); if(title)title.innerHTML='Modo<span class="em"> sobrevivência</span>';
-  const btn=$('#setup .bench-btn .btn'); if(btn)btn.textContent='Começar Sobrevivência';
+  // Modo Sobrevivência removido.
+  S.survival=false;
+  show('home');
 }
 function bindSel(sel,stateKey,dataKey){document.querySelectorAll(sel).forEach(d=>{d.onclick=()=>{document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));d.classList.add('sel');S[stateKey]=d.dataset[dataKey];};});}
 
@@ -807,6 +807,21 @@ function showLineupReview(){
   dst.innerHTML=src.innerHTML;
 }
 function confirmTournament(){startTournament();}
+function backToHomeBeforeCup(){
+  S.daily=false;
+  S.survival=false;
+  S.survivalRun=false;
+  S.starters=[];
+  S.bench=[];
+  S.pickPlan=[];
+  S.pickIndex=0;
+  S.groupOpp=[];
+  S.koOpp=[];
+  S.table=[];
+  S.history=[];
+  show('home');
+}
+
 function startTournament(){
   if(S.survival && !S.survivalRun){
     S.survivalRun=true;S.survivalCup=1;S.survivalTitles=0;S.survivalWins=0;
@@ -968,60 +983,27 @@ function finishMatch(mg,og,o,pen){
   res.innerHTML=`<div class="result-banner ${bannerCls}">${verb} ${mg} a ${og}${penStr}</div>`;
   S.history.push({round:S.phase==="group"?`Copa ${S.survivalCup||1} · Grupos J${S.gIndex+1}`:S.survival?`Copa ${S.survivalCup} · ${o.round}`:o.round,opp:`${o.n} ${o.y}`,flag:o.c,mg,og,pen:penStr,res:won?'V':drew?'E':'D'});
   if(won && S.survival)S.survivalWins=(S.survivalWins||0)+1;
+  const rewardGate=(next)=>{
+    if(won && S.survival){b.textContent='Escolher recompensa';b.onclick=()=>showSurvivalReward(next);}
+    else next(false);
+  };
   if(S.phase==="group"){
     const me=S.table.find(t=>t.n==="BRASIL"),ad=S.table.find(t=>t.n===o.n);
     me.gf+=mg;me.ga+=og;ad.gf+=og;ad.ga+=mg;
     if(won)me.pts+=3;else if(drew){me.pts++;ad.pts++;}else ad.pts+=3;
     simOtherGroupGame();
-
-    const next=()=>{
-      if(S.gIndex>=S.groupOpp.length-1){
-        showStandings();
-      }else{
-        S.gIndex++;
-        loadMatch();
-      }
-    };
-
-    if(won && S.survival){
-      b.textContent='⭐ Escolher recompensa';
-      b.onclick=()=>showSurvivalReward(next);
-    }else{
-      b.textContent=(S.gIndex>=S.groupOpp.length-1)?'Ver classificação':'Próximo jogo →';
-      b.onclick=next;
-    }
+    const next=()=>{ if(S.gIndex>=S.groupOpp.length-1)showStandings(); else {S.gIndex++;loadMatch();} };
+    b.textContent=(S.gIndex>=S.groupOpp.length-1)?'Ver classificação':'Próximo jogo →';
+    b.onclick=()=>rewardGate(next);
     return;
   }
-
-  if(!won){
-    b.textContent='Ver resultado';
-    b.onclick=()=>endGame(false,o);
-    return;
-  }
-
+  if(!won){b.textContent='Ver resultado';b.onclick=()=>endGame(false,o);return;}
   if(S.koIndex>=S.koOpp.length-1){
-    if(S.survival){
-      b.textContent='⭐ Escolher recompensa';
-      b.onclick=()=>showSurvivalReward(()=>survivalCupWon(o));
-    }else{
-      b.textContent='🏆 Erguer a taça';
-      b.onclick=()=>endGame(true,o);
-    }
+    if(S.survival){b.textContent='Escolher recompensa';b.onclick=()=>showSurvivalReward(()=>survivalCupWon(o));}
+    else{b.textContent='🏆 Erguer a taça';b.onclick=()=>endGame(true,o);}
     return;
   }
-
-  const nextPhase=()=>{
-    S.koIndex++;
-    loadMatch();
-  };
-
-  if(S.survival){
-    b.textContent='⭐ Escolher recompensa';
-    b.onclick=()=>showSurvivalReward(nextPhase);
-  }else{
-    b.textContent='Próxima fase →';
-    b.onclick=nextPhase;
-  }
+  b.textContent='Próxima fase →';b.onclick=()=>rewardGate(()=>{S.koIndex++;loadMatch();});
 }
 function survivalRank(){
   const t=S.survivalTitles||0;
@@ -1032,48 +1014,27 @@ function survivalRank(){
   return 'Sobrevivente em construção';
 }
 function showSurvivalReward(next){
-  // Guarda exatamente o próximo passo. A recompensa só chama esse passo depois da escolha,
-  // evitando avanço duplo ou pulo de fase.
   S.afterReward=next;
-
   $('#survivalStage').textContent=`Copa ${S.survivalCup} · dificuldade +${survivalDifficultyBonus()}`;
   $('#survCups').textContent=S.survivalCup||1;
   $('#survTitles').textContent=S.survivalTitles||0;
   $('#survWins').textContent=S.survivalWins||0;
-  $('#survivalRewardText').textContent='Vitória conquistada. Escolha UMA das 3 recompensas sorteadas.';
-
-  const pool=[
-    ['atk','+2 Ataque','Melhora pontas e centroavantes.'],
+  $('#survivalRewardText').textContent='Vitória conquistada. Escolha um upgrade permanente para esta sequência.';
+  const rewards=[
+    ['atk','+2 Ataque','Melhora pontas e atacantes.'],
     ['mid','+2 Meio','Melhora volantes, meias e armadores.'],
     ['def','+2 Defesa','Melhora zagueiros e laterais.'],
     ['gol','+1 Goleiro','Melhora goleiro e pênaltis.'],
     ['all','+1 Geral','Pequeno ganho em todos os setores.'],
-    ['reroll','🎲 Reroll de Jogador','Troque 1 atleta do elenco por outro da mesma posição.']
+    ['med','🩺 Departamento Médico','Recupera 1 jogador lesionado ou limpa 1 suspensão.'],
+    ['reroll','🎲 Reroll de Jogador','Escolha 1 atleta do elenco e troque por nova opção da mesma posição.']
   ];
-
-  // Departamento Médico só entra no sorteio se houver alguém fora.
-  if(medicalTargets().length){
-    pool.push(['med','🩺 Departamento Médico','Recupera 1 jogador lesionado ou limpa 1 suspensão.']);
-  }
-
-  // Sorteio independente e realmente aleatório de 3 recompensas.
-  const available=[...pool];
-  const chosen=[];
-  while(chosen.length<3 && available.length){
-    const idx=Math.floor(Math.random()*available.length);
-    chosen.push(available.splice(idx,1)[0]);
-  }
-
-  const grid=$('#rewardGrid');
-  grid.innerHTML='';
-  chosen.forEach(([id,t,d])=>{
-    const card=document.createElement('div');
-    card.className='reward-card';
+  const grid=$('#rewardGrid');grid.innerHTML='';
+  rewards.forEach(([id,t,d])=>{
+    const card=document.createElement('div');card.className='reward-card';
     card.innerHTML=`<div class="t">${t}</div><div class="d">${d}</div>`;
-    card.onclick=()=>applySurvivalReward(id);
-    grid.appendChild(card);
+    card.onclick=()=>applySurvivalReward(id);grid.appendChild(card);
   });
-
   show('survivalReward');
 }
 function applySurvivalReward(id){
@@ -1088,25 +1049,12 @@ function applySurvivalReward(id){
   continueAfterSurvivalReward();
 }
 function continueAfterSurvivalReward(){
-  const next=S.afterReward;
-  S.afterReward=null;
-
-  if(typeof next==='function'){
-    show('match');
-    next();
-    return;
-  }
-
-  // Fallback defensivo: só é usado se alguma recompensa não tiver próximo passo salvo.
-  if(S.phase==='group'){
-    if(S.gIndex>=S.groupOpp.length-1)showStandings();
-    else {S.gIndex++;show('match');loadMatch();}
-  }
-  else if(S.phase==='ko'){
-    if(S.koIndex>=S.koOpp.length-1)survivalCupWon(S.koOpp[S.koIndex]||{});
-    else {S.koIndex++;show('match');loadMatch();}
-  }
-  else {show('match');loadMatch();}
+  const next=S.afterReward;S.afterReward=null;
+  if(typeof next==='function'){next();return;}
+  // fallback defensivo para nunca deixar a tela de recompensa travada
+  if(S.phase==='group'){ if(S.gIndex>=S.groupOpp.length-1)showStandings(); else {S.gIndex++;loadMatch();} }
+  else if(S.phase==='ko'){ if(S.koIndex>=S.koOpp.length-1)survivalCupWon(S.koOpp[S.koIndex]||{}); else {S.koIndex++;loadMatch();} }
+  else loadMatch();
 }
 function showSurvivalRerollPicker(){
   $('#survivalRewardText').textContent='Escolha o jogador que será substituído. O novo atleta virá da mesma posição.';

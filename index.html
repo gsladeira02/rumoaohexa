@@ -129,6 +129,16 @@ h1 .em{color:var(--gold);display:block}
 #app{padding-bottom:96px}
 
 
+
+/* ===== VELOCIDADE DA PARTIDA ===== */
+.speed-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.speed-opt{border:2px solid var(--line);border-radius:12px;padding:10px 6px;background:rgba(0,0,0,.22);cursor:pointer;text-align:center;transition:.12s}
+.speed-opt:active{transform:scale(.98)}
+.speed-opt.sel{border-color:var(--gold);background:rgba(255,210,74,.12)}
+.speed-opt .t{font-family:'Anton';font-size:14px;letter-spacing:.4px}
+.speed-opt .d{font-size:9px;opacity:.65;margin-top:2px}
+@media (max-width:420px){.speed-grid{grid-template-columns:repeat(2,1fr)}}
+
 /* ===== TELA DE REVISÃO DO ELENCO ===== */
 .lineup-review{margin-top:14px;display:flex;flex-direction:column;gap:12px}
 .review-field{width:100%;background:linear-gradient(180deg,#0d7a48,#064a2b);border:2px solid var(--line);border-radius:18px;padding:14px 8px;display:flex;flex-direction:column;justify-content:space-between;min-height:470px;position:relative;overflow:hidden}
@@ -231,6 +241,14 @@ img,canvas{max-width:100%}
       <div class="opt" data-dment="ofensivo"><span class="t">Ofensivo</span></div>
       <div class="opt" data-dment="defensivo"><span class="t">Defensivo</span></div>
     </div>
+
+    <p class="label">Velocidade da partida</p>
+    <div class="speed-grid" id="dSpeedOpts">
+      <div class="speed-opt" data-dspeed="lenta"><div class="t">🐢 Lenta</div><div class="d">mais animação</div></div>
+      <div class="speed-opt sel" data-dspeed="normal"><div class="t">⚖️ Normal</div><div class="d">padrão</div></div>
+      <div class="speed-opt" data-dspeed="rapida"><div class="t">⚡ Rápida</div><div class="d">menos espera</div></div>
+      <div class="speed-opt" data-dspeed="instantanea"><div class="t">🚀 Instantânea</div><div class="d">sem animação</div></div>
+    </div>
     <div class="bench-btn"><button class="btn" onclick="startDailyDraft()">Escolher reservas</button></div>
   </section>
 
@@ -249,6 +267,14 @@ img,canvas{max-width:100%}
     <div class="options" id="diffOpts">
       <div class="opt sel" data-diff="classico"><span class="t">Clássico</span><span class="d">Notas (overall) visíveis nas cartas.</span></div>
       <div class="opt" data-diff="cegas"><span class="t">Às Cegas</span><span class="d">Notas escondidas. Só sua memória decide.</span></div>
+    </div>
+
+    <p class="label">Velocidade da partida</p>
+    <div class="speed-grid" id="speedOpts">
+      <div class="speed-opt" data-speed="lenta"><div class="t">🐢 Lenta</div><div class="d">mais animação</div></div>
+      <div class="speed-opt sel" data-speed="normal"><div class="t">⚖️ Normal</div><div class="d">padrão</div></div>
+      <div class="speed-opt" data-speed="rapida"><div class="t">⚡ Rápida</div><div class="d">menos espera</div></div>
+      <div class="speed-opt" data-speed="instantanea"><div class="t">🚀 Instantânea</div><div class="d">sem animação</div></div>
     </div>
     <div class="bench-btn"><button class="btn" onclick="startDraft()">Ir pro Draft</button></div>
   </section>
@@ -386,6 +412,7 @@ const sb=(window.supabase&&SUPABASE_URL&&SUPABASE_KEY)?window.supabase.createCli
 let playersLoaded=false;
 let playersLoading=null;
 const MENT={equilibrado:{atk:0,def:0},ofensivo:{atk:1.2,def:-1.0},defensivo:{atk:-0.8,def:1.4}};
+const MATCH_SPEEDS={lenta:320,normal:160,rapida:70,instantanea:0};
 
 // Banco de seleções adversárias reais (nome, bandeira, ano de uma campanha marcante, força).
 // Usado para sortear adversários sem repetir país, escalonando força por fase.
@@ -418,7 +445,7 @@ function knockoutUpsetMod(oppStr){
   return {my:0,op:0,pen:0,label:"elite"};
 }
 
-let S={formation:"4-4-2",ment:"equilibrado",diff:"classico",starters:[],bench:[],pickPlan:[],pickIndex:0,
+let S={speed:"normal",formation:"4-4-2",ment:"equilibrado",diff:"classico",starters:[],bench:[],pickPlan:[],pickIndex:0,
        phase:"group",gIndex:0,koIndex:0,table:[],history:[],groupOpp:[],koOpp:[],daily:false,
        survival:false,survivalRun:false,survivalCup:1,survivalTitles:0,survivalWins:0,survivalBuffs:{atk:0,mid:0,def:0,gol:0},afterReward:null,
        status:{},lastLineupNotes:[]};
@@ -440,8 +467,8 @@ async function startSetup(daily){
     d.onclick=()=>{document.querySelectorAll('[data-form]').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');S.formation=k};
     fo.appendChild(d);
   });
-  S.formation="4-4-2";S.ment="equilibrado";S.diff="classico";
-  bindSel('[data-ment]','ment','ment');bindSel('[data-diff]','diff','diff');
+  S.formation="4-4-2";S.ment="equilibrado";S.diff="classico";S.speed="normal";
+  bindSel('[data-ment]','ment','ment');bindSel('[data-diff]','diff','diff');bindSpeed('[data-speed]','speed');
   show('setup');
 }
 function startSurvivalSetup(){
@@ -449,7 +476,17 @@ function startSurvivalSetup(){
   S.survival=false;
   show('home');
 }
-function bindSel(sel,stateKey,dataKey){document.querySelectorAll(sel).forEach(d=>{d.onclick=()=>{document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));d.classList.add('sel');S[stateKey]=d.dataset[dataKey];};});}
+function bindSel(sel,stateKey,dataKey){document.querySelectorAll(sel).forEach(d=>{d.onclick=()=>{document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));d.classList.add('sel');S[stateKey]=d.dataset[dataKey];}
+function bindSpeed(sel,dataKey){
+  document.querySelectorAll(sel).forEach(d=>{
+    d.onclick=()=>{
+      document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel');
+      S.speed=d.dataset[dataKey]||'normal';
+    };
+  });
+}
+;});}
 
 /* ---------- DESAFIO DIÁRIO ---------- */
 // RNG determinístico por semente (mulberry32) para o time/adversários do dia
@@ -586,7 +623,7 @@ async function startDaily(){
   const el=$('#dailyTeam');el.innerHTML='<h4>Time titular do dia</h4>';
   S.starters.forEach(p=>el.appendChild(srow(p,'starter')));
   document.querySelectorAll('[data-dment]').forEach(d=>{d.onclick=()=>{document.querySelectorAll('[data-dment]').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');S.ment=d.dataset.dment;};});
-  S.ment='equilibrado';
+  S.ment='equilibrado';S.speed='normal';bindSpeed('[data-dspeed]','dspeed');
   show('dailyIntro');
 }
 function startDailyDraft(){
@@ -945,7 +982,7 @@ function startTournament(){
   else{S.scorers=S.scorers||{};S.appearances=S.appearances||{};}
   pickNations();
   S.table=[{n:"BRASIL",yr:"Lendas",pts:0,gf:0,ga:0},...S.groupOpp.map(g=>({n:g.n,yr:g.y,pts:0,gf:0,ga:0}))];
-  $('#matchForm').textContent=(S.survival?`Sobrevivência · Copa ${S.survivalCup}`:S.formation+' · '+S.ment);
+  $('#matchForm').textContent=(S.survival?`Sobrevivência · Copa ${S.survivalCup}`:S.formation+' · '+S.ment+' · '+(S.speed==='instantanea'?'instantânea':S.speed));
   show('match');loadMatch();
 }
 function curOpponent(){
@@ -1074,9 +1111,19 @@ function simPenalties(active,o){
   return {me,op,win:me>op,shots};
 }
 function animateScore(mg,og){
-  const el=$('#scoreNum');const steps=Math.max(mg,og,1);let i=0;
+  const el=$('#scoreNum');
+  const delay=MATCH_SPEEDS[S.speed]??MATCH_SPEEDS.normal;
+  if(S.speed==='instantanea'||delay<=0){
+    el.textContent=`${mg} - ${og}`;
+    return;
+  }
+  const steps=Math.max(mg,og,1);let i=0;
   el.textContent='0 - 0';
-  const t=setInterval(()=>{i++;el.textContent=`${Math.min(i,mg)} - ${Math.min(i,og)}`;if(i>=steps)clearInterval(t);},Math.min(160,500/steps));
+  const t=setInterval(()=>{
+    i++;
+    el.textContent=`${Math.min(i,mg)} - ${Math.min(i,og)}`;
+    if(i>=steps)clearInterval(t);
+  },delay);
 }
 function finishMatch(mg,og,o,pen){
   const res=$('#matchResult'),b=$('#matchBtn');

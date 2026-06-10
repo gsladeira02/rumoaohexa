@@ -1017,6 +1017,7 @@ function renderOvrBar(){
     <div class="ovr-cell"><div class="v">${ov.atk}</div><div class="l">ATAQUE</div></div>`;
 }
 function playMatch(){
+  const btn=$('#matchBtn');if(btn)btn.disabled=true;
   const o=curOpponent();
   let active=buildAvailableLineup();const subs=[];
   const usedActive=new Set(active.map(p=>pkey(p)));
@@ -1070,8 +1071,7 @@ function playMatch(){
   if(S.phase==="ko" && mg===og){
     pen=simPenalties(active,o);
   }
-  // animação leve: placar sobe em ~0.5s
-  animateScore(mg,og);
+  // animação do placar; resultado e botões só aparecem depois que ela termina
   $('#scorers').innerHTML=sc.map(e=>`<div class="sc"><span class="mn">${e.mn}'</span><span>⚽ ${e.me?e.txt:o.n}</span></div>`).join('');
   let notes=[];
   if(S.lastLineupNotes&&S.lastLineupNotes.length)notes=notes.concat(S.lastLineupNotes);
@@ -1081,7 +1081,7 @@ function playMatch(){
   if(S.missedThisMatch)tickMissedAbsences(S.missedThisMatch);
   notes=notes.concat(cardEvents,injuryEvents);
   $('#subNote').innerHTML=notes.join('<br>');
-  finishMatch(mg,og,o,pen);
+  animateScore(mg,og,()=>finishMatch(mg,og,o,pen));
 }
 // disputa de pênaltis: melhor de 5 + morte súbita. Vantagem leve ao maior overall
 // e bônus de defesa conforme o goleiro em campo.
@@ -1117,11 +1117,12 @@ function simPenalties(active,o){
   if(me===op){ if(Math.random()<0.5)me++; else op++; } // desempate final de segurança
   return {me,op,win:me>op,shots};
 }
-function animateScore(mg,og){
+function animateScore(mg,og,done){
   const el=$('#scoreNum');
   const delay=MATCH_SPEEDS[S.speed]??MATCH_SPEEDS.normal;
   if(S.speed==='instantanea'||delay<=0){
     el.textContent=`${mg} - ${og}`;
+    if(typeof done==='function')done();
     return;
   }
   const steps=Math.max(mg,og,1);let i=0;
@@ -1129,7 +1130,10 @@ function animateScore(mg,og){
   const t=setInterval(()=>{
     i++;
     el.textContent=`${Math.min(i,mg)} - ${Math.min(i,og)}`;
-    if(i>=steps)clearInterval(t);
+    if(i>=steps){
+      clearInterval(t);
+      if(typeof done==='function')done();
+    }
   },delay);
 }
 function finishMatch(mg,og,o,pen){

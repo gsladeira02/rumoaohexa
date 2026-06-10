@@ -467,7 +467,7 @@ async function startSetup(daily){
     d.onclick=()=>{document.querySelectorAll('[data-form]').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');S.formation=k};
     fo.appendChild(d);
   });
-  S.formation="4-4-2";S.ment="equilibrado";S.diff="classico";S.speed="normal";
+  S.formation="4-4-2";S.ment="equilibrado";S.diff="classico";S.speed="normal";S.speed="normal";
   bindSel('[data-ment]','ment','ment');bindSel('[data-diff]','diff','diff');bindSpeed('[data-speed]','speed');
   show('setup');
 }
@@ -485,16 +485,7 @@ function bindSel(sel,stateKey,dataKey){
     };
   });
 }
-
 function bindSpeed(sel,dataKey){
-  document.querySelectorAll(sel).forEach(d=>{
-    d.onclick=()=>{
-      document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));
-      d.classList.add('sel');
-      S.speed=d.dataset[dataKey] || 'normal';
-    };
-  });
-}
   document.querySelectorAll(sel).forEach(d=>{
     d.onclick=()=>{
       document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));
@@ -503,7 +494,6 @@ function bindSpeed(sel,dataKey){
     };
   });
 }
-;});}
 
 /* ---------- DESAFIO DIÁRIO ---------- */
 // RNG determinístico por semente (mulberry32) para o time/adversários do dia

@@ -1017,7 +1017,6 @@ function renderOvrBar(){
     <div class="ovr-cell"><div class="v">${ov.atk}</div><div class="l">ATAQUE</div></div>`;
 }
 function playMatch(){
-  const btn=$('#matchBtn');if(btn)btn.disabled=true;
   const o=curOpponent();
   let active=buildAvailableLineup();const subs=[];
   const usedActive=new Set(active.map(p=>pkey(p)));

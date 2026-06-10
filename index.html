@@ -1,7 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8187260162662340"
-     crossorigin="anonymous"></script>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -141,6 +139,14 @@ h1 .em{color:var(--gold);display:block}
 .speed-opt .d{font-size:9px;opacity:.65;margin-top:2px}
 @media (max-width:420px){.speed-grid{grid-template-columns:repeat(2,1fr)}}
 
+
+/* ===== ANÚNCIOS ADSENSE ===== */
+.ad-wrap{margin:14px 0;padding:8px;border:1px solid rgba(255,255,255,.10);border-radius:14px;background:rgba(0,0,0,.16);min-height:90px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ad-wrap::before{content:"Publicidade";position:absolute;transform:translateY(-48px);font-size:9px;font-weight:900;letter-spacing:1px;opacity:.35;text-transform:uppercase}
+.ad-wrap{position:relative}
+.ad-wrap .adsbygoogle{display:block;width:100%;min-height:80px}
+@media (max-width:420px){.ad-wrap{min-height:74px}.ad-wrap .adsbygoogle{min-height:64px}}
+
 /* ===== TELA DE REVISÃO DO ELENCO ===== */
 .lineup-review{margin-top:14px;display:flex;flex-direction:column;gap:12px}
 .review-field{width:100%;background:linear-gradient(180deg,#0d7a48,#064a2b);border:2px solid var(--line);border-radius:18px;padding:14px 8px;display:flex;flex-direction:column;justify-content:space-between;min-height:470px;position:relative;overflow:hidden}
@@ -212,6 +218,8 @@ h1 .em{color:var(--gold);display:block}
 #app,.screen,.scoreboard,.gtable,.draft-body{max-width:100%}
 img,canvas{max-width:100%}
 </style>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8187260162662340"
+     crossorigin="anonymous"></script>
 </head>
 <body>
 <div id="app">
@@ -225,6 +233,14 @@ img,canvas{max-width:100%}
     <div class="bench-btn" style="margin-top:0">
       <button class="btn" onclick="startSetup(false)">🏆 Modo Carreira</button>
       <button class="btn ghost" onclick="startDaily()">📅 Desafio Diário</button>
+    </div>
+
+    <div class="ad-wrap" id="adHome">
+      <ins class="adsbygoogle"
+           data-ad-client="ca-pub-8187260162662340"
+           data-ad-slot="COLE_AQUI_O_SLOT_DO_ANUNCIO_HOME"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
     </div>
     <p class="muted" id="recordLine">504 convocados · 9 posições · 7 esquemas</p>
     <div class="status-note" id="globalStatsLine" style="margin-top:10px;text-align:center">
@@ -302,6 +318,14 @@ img,canvas{max-width:100%}
       <div class="review-field" id="reviewField"></div>
       <div class="review-bench" id="reviewBench"></div>
     </div>
+
+    <div class="ad-wrap" id="adReview">
+      <ins class="adsbygoogle"
+           data-ad-client="ca-pub-8187260162662340"
+           data-ad-slot="COLE_AQUI_O_SLOT_DO_ANUNCIO_ELENCO"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    </div>
     <div class="bench-btn">
       <button class="btn" onclick="confirmTournament()">Começar a Copa</button>
       <button class="btn ghost" onclick="backToHomeBeforeCup()">⬅ Voltar aos modos</button>
@@ -351,6 +375,14 @@ img,canvas{max-width:100%}
       <p class="sub" id="endText" style="text-align:center"></p>
     </div>
     <canvas id="shareCanvas" width="1080" height="2160"></canvas>
+
+    <div class="ad-wrap" id="adEnd">
+      <ins class="adsbygoogle"
+           data-ad-client="ca-pub-8187260162662340"
+           data-ad-slot="COLE_AQUI_O_SLOT_DO_ANUNCIO_FINAL"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+    </div>
     <div style="margin-top:18px;background:linear-gradient(135deg,rgba(255,210,74,.13),rgba(255,107,91,.10));border:2px solid rgba(255,210,74,.45);border-radius:18px;padding:20px 18px;text-align:center">
       <div style="font-size:28px;margin-bottom:6px">❤️</div>
       <p style="font-family:'Anton',sans-serif;font-size:20px;color:var(--gold);letter-spacing:.5px;margin-bottom:8px">APOIE O RUMO AO HEXA</p>
@@ -455,7 +487,25 @@ let S={speed:"normal",formation:"4-4-2",ment:"equilibrado",diff:"classico",start
 const $=s=>document.querySelector(s);
 // nome amigável para exibição (remove desambiguações internas)
 const dispName=n=>n.replace(/ Botafogo$/,'');
-const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('#'+id).classList.add('active');window.scrollTo(0,0)};
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('#'+id).classList.add('active');window.scrollTo(0,0);setTimeout(loadVisibleAds,250)};
+
+function pushAdsenseAd(el){
+  if(!el || el.dataset.loaded==='1')return;
+  if(!window.adsbygoogle)return;
+  try{
+    (adsbygoogle=window.adsbygoogle||[]).push({});
+    el.dataset.loaded='1';
+  }catch(e){}
+}
+function loadVisibleAds(){
+  document.querySelectorAll('.adsbygoogle').forEach(ad=>{
+    const wrap=ad.closest('.ad-wrap');
+    if(!wrap)return;
+    const rect=wrap.getBoundingClientRect();
+    if(rect.width>0 && rect.height>0)pushAdsenseAd(ad);
+  });
+}
+
 const shuffle=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
 const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 
@@ -1524,7 +1574,7 @@ async function shareCard(){
   genBtn.textContent='✅ Imagem pronta — baixe abaixo (link copiado)';
 }
 function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
-try{refreshRecordLine();loadPlayersFromSupabase();loadGlobalStats();}catch(e){}
+try{refreshRecordLine();loadPlayersFromSupabase();loadGlobalStats();setTimeout(loadVisibleAds,800);}catch(e){}
 </script>
 </body>
 </html>

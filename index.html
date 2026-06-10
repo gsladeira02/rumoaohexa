@@ -476,8 +476,25 @@ function startSurvivalSetup(){
   S.survival=false;
   show('home');
 }
-function bindSel(sel,stateKey,dataKey){document.querySelectorAll(sel).forEach(d=>{d.onclick=()=>{document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));d.classList.add('sel');S[stateKey]=d.dataset[dataKey];}
+function bindSel(sel,stateKey,dataKey){
+  document.querySelectorAll(sel).forEach(d=>{
+    d.onclick=()=>{
+      document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel');
+      S[stateKey]=d.dataset[dataKey];
+    };
+  });
+}
+
 function bindSpeed(sel,dataKey){
+  document.querySelectorAll(sel).forEach(d=>{
+    d.onclick=()=>{
+      document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel');
+      S.speed=d.dataset[dataKey] || 'normal';
+    };
+  });
+}
   document.querySelectorAll(sel).forEach(d=>{
     d.onclick=()=>{
       document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));

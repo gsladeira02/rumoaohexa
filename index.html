@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+<head>
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-776XLL739F"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
-
 gtag('config', 'G-776XLL739F');
 </script>
-<head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>RUMO AO HEXA · Simulador de Copa</title>
@@ -226,6 +226,13 @@ h1 .em{color:var(--gold);display:block}
 }
 #app,.screen,.scoreboard,.gtable,.draft-body{max-width:100%}
 img,canvas{max-width:100%}
+
+/* ===== ADSENSE EM ANÁLISE ===== */
+/* Remova este bloco quando o AdSense aprovar o site. */
+.ad-wrap{
+  display:none !important;
+}
+
 </style>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8187260162662340"
      crossorigin="anonymous"></script>
@@ -496,7 +503,7 @@ let S={speed:"normal",formation:"4-4-2",ment:"equilibrado",diff:"classico",start
 const $=s=>document.querySelector(s);
 // nome amigável para exibição (remove desambiguações internas)
 const dispName=n=>n.replace(/ Botafogo$/,'');
-const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('#'+id).classList.add('active');window.scrollTo(0,0);setTimeout(loadVisibleAds,250)};
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('#'+id).classList.add('active');window.scrollTo(0,0)};
 
 function pushAdsenseAd(el){
   if(!el || el.dataset.loaded==='1')return;
@@ -1583,7 +1590,7 @@ async function shareCard(){
   genBtn.textContent='✅ Imagem pronta — baixe abaixo (link copiado)';
 }
 function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
-try{refreshRecordLine();loadPlayersFromSupabase();loadGlobalStats();setTimeout(loadVisibleAds,800);}catch(e){}
+try{refreshRecordLine();loadPlayersFromSupabase();loadGlobalStats();}catch(e){}
 </script>
 </body>
 </html>

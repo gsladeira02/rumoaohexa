@@ -486,13 +486,14 @@ const NATIONS=[
 // 5 fases de mata-mata (formato 2026: 32 → 16avos)
 const KO_ROUNDS=["16 avos de Final","Oitavas de Final","Quartas de Final","Semifinal","FINAL"];
 // faixas de força por fase (sorteio fica mais difícil ao avançar)
-const KO_STR=[[64,72],[68,77],[74,82],[79,85],[84,92]];
+const KO_STR=[[70,78],[76,83],[82,88],[86,91],[90,96]];
 // Ajuste de zebra no mata-mata: seleções abaixo do bloco tradicional ficam mais acessíveis.
 function knockoutUpsetMod(oppStr){
-  if(oppStr<=72)return {my:0.38,op:-0.42,pen:0.10,label:"zebra"};
-  if(oppStr<=77)return {my:0.24,op:-0.26,pen:0.07,label:"azarão"};
-  if(oppStr<=81)return {my:0.12,op:-0.12,pen:0.04,label:"parelho"};
-  return {my:0,op:0,pen:0,label:"elite"};
+  // Ajuste mais difícil: ainda existe zebra, mas o mata-mata agora pune mais.
+  if(oppStr<=72)return {my:0.10,op:-0.04,pen:0.025,label:"zebra"};
+  if(oppStr<=77)return {my:0.06,op:0.00,pen:0.015,label:"azarão"};
+  if(oppStr<=81)return {my:0.02,op:0.04,pen:0.005,label:"parelho"};
+  return {my:-0.04,op:0.10,pen:-0.010,label:"elite"};
 }
 
 let S={speed:"normal",formation:"4-4-2",ment:"equilibrado",diff:"classico",starters:[],bench:[],pickPlan:[],pickIndex:0,
@@ -691,7 +692,7 @@ async function startDaily(){
   // shuffle determinístico
   for(let i=np.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[np[i],np[j]]=[np[j],np[i]];}
   const take=(lo,hi)=>{let c=np.filter(x=>!used.has(x.n)&&x.str>=lo&&x.str<=hi);if(!c.length)c=np.filter(x=>!used.has(x.n));const s=c[Math.floor(rng()*c.length)];used.add(s.n);return s;};
-  S.groupOpp=[take(66,74),take(70,79),take(76,83)];
+  S.groupOpp=[take(72,79),take(76,84),take(80,88)];
   S.koOpp=KO_STR.map(([lo,hi])=>take(lo,hi));
   // mostra o time do dia e deixa escolher só reservas + mentalidade
   $('#dailyDesc').textContent=`Desafio de ${S.dailyDate}. Todos recebem este mesmo time (${S.formation}) e os mesmos adversários. Escolha só os 5 reservas e a mentalidade!`;
@@ -996,7 +997,7 @@ function applyMedicalDepartment(){
 }
 function teamRating(active){
   const avg=active.reduce((a,p)=>a+playerPower(p),0)/active.length;
-  return avg+5; // bônus menor: mantém o Brasil forte sem deixar o simulador fácil demais
+  return avg+2; // bônus reduzido: mantém o Brasil forte, mas evita títulos fáceis demais
 }
 function pickNations(){
   // sorteia 3 para o grupo + 5 para o KO, países distintos, escalando força
@@ -1007,8 +1008,8 @@ function pickNations(){
     if(!cands.length)cands=pool.filter(x=>!used.has(x.n));
     const sel=cands[rnd(0,cands.length-1)];used.add(sel.n);return sel;
   };
-  // grupo: força baixa/média
-  S.groupOpp=[take(66,74),take(70,79),take(76,83)];
+  // grupo: agora mais forte para reduzir campanhas fáceis
+  S.groupOpp=[take(72,79),take(76,84),take(80,88)];
   // KO: escalonado por fase
   S.koOpp=KO_STR.map(([lo,hi])=>take(lo,hi));
 }
@@ -1105,17 +1106,17 @@ function playMatch(){
   // overalls setoriais do time EM CAMPO (com subs aplicadas)
   const defPos=["GOL","ZAG","LD","LE"],atkPos=["PD","PE","CA"];
   const avgOf=arr=>arr.length?arr.reduce((a,p)=>a+playerPower(p),0)/arr.length:80;
-  const defR=avgOf(active.filter(p=>defPos.includes(p.pos)))+5;   // bônus menor para equilíbrio
-  const atkR=avgOf(active.filter(p=>atkPos.includes(p.pos)))+5;
+  const defR=avgOf(active.filter(p=>defPos.includes(p.pos)))+2;   // bônus reduzido para dificultar
+  const atkR=avgOf(active.filter(p=>atkPos.includes(p.pos)))+2;
   const myR=teamRating(active);                                    // força geral (p/ pênaltis etc.)
   // placar realista: ATAQUE meu define meus gols; DEFESA minha reduz gols do adversário
-  const gapAtk=Math.max(-0.75,Math.min(0.75,(atkR-opp)/16));   // meu ataque vs força adversária
-  const gapDef=Math.max(-0.75,Math.min(0.75,(defR-opp)/16));   // minha defesa vs força adversária
+  const gapAtk=Math.max(-0.65,Math.min(0.65,(atkR-opp)/18));   // meu ataque vs força adversária
+  const gapDef=Math.max(-0.65,Math.min(0.65,(defR-opp)/18));   // minha defesa vs força adversária
   const isKO=S.phase==="ko";
   const noise=()=>(Math.random()-0.5)*0.34;
   const koMod=isKO?knockoutUpsetMod(opp):{my:0,op:0,pen:0,label:"grupo"};
-  const lamMy=Math.max(0.28,1.20+gapAtk*0.82+m.atk*0.22+koMod.my+noise());
-  const lamOp=Math.max(0.22,1.20-gapDef*0.82-m.def*0.20+koMod.op+noise());
+  const lamMy=Math.max(0.24,1.05+gapAtk*0.68+m.atk*0.18+koMod.my+noise());
+  const lamOp=Math.max(0.34,1.32-gapDef*0.62-m.def*0.12+koMod.op+noise());
   const damp=(g,isKO)=>{
     // no mata-mata, reduz chance de goleadas extravagantes ainda mais
     const lim=isKO?4:5;
@@ -1158,11 +1159,11 @@ function simPenalties(active,o){
   const myTeam=teamRating(active);
   const koMod=knockoutUpsetMod(o.str);
   // probabilidade de converter cada cobrança; contra zebras, o Brasil tem vantagem mental/técnica maior
-  const myConv=0.74+(myTeam-82)*0.003+koMod.pen;
-  const opConv=0.74+(o.str-82)*0.003-koMod.pen*0.55;
+  const myConv=0.70+(myTeam-82)*0.002+koMod.pen;
+  const opConv=0.74+(o.str-82)*0.003-koMod.pen*0.25;
   // chance do MEU goleiro defender (acima do baseline) e do goleiro adversário
-  const myKeeperSave=(gkRating-80)*0.009;          // bônus do goleiro calibrado
-  const opKeeperSave=(o.str-82)*0.005;
+  const myKeeperSave=(gkRating-80)*0.006;          // bônus do goleiro calibrado, agora menor
+  const opKeeperSave=(o.str-82)*0.006;
   let me=0,op=0,shots=[];
   const kick=(conv,save)=>{ // conv do cobrador, save do goleiro adversário
     const p=Math.max(0.45,Math.min(0.95,conv-save));
@@ -1592,5 +1593,10 @@ async function shareCard(){
 function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 try{refreshRecordLine();loadPlayersFromSupabase();loadGlobalStats();}catch(e){}
 </script>
+
+<!-- PropellerAds -->
+<script>(function(s){s.dataset.zone='11147011',s.src='https://n6wxm.com/vignette.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+<script>(function(s){s.dataset.zone='11147019',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+
 </body>
 </html>
